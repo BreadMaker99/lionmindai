@@ -30,3 +30,6 @@ Thumbs.db
 *.pem
 tsconfig.tsbuildinfo
 .vercel
+
+# factuur-app API key
+factuur-app/config.js

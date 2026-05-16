@@ -1,0 +1,1185 @@
+<!DOCTYPE html>
+<html lang="nl">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Betalingsherinneringen — Loodgieters België</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg:           #F1F5F9;
+      --white:        #FFFFFF;
+      --primary:      #1B4FCC;
+      --primary-dark: #102F8A;
+      --border:       #E2E8F0;
+      --text:         #0F172A;
+      --muted:        #64748B;
+      --danger:       #DC2626;
+      --success:      #059669;
+      --warning:      #D97706;
+      --orange:       #EA580C;
+    }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      min-height: 100vh;
+      font-size: 15px;
+      line-height: 1.6;
+    }
+
+    /* ── App bar ─────────────────────────────────────────────────────── */
+    .app-bar {
+      background: var(--primary-dark);
+      color: #fff;
+      padding: 14px 24px;
+      display: flex; align-items: center; justify-content: space-between;
+      position: sticky; top: 0; z-index: 50;
+    }
+    .app-bar-left  { display: flex; align-items: center; gap: 14px; }
+    .app-bar-title { font-size: 17px; font-weight: 700; letter-spacing: -.3px; }
+    .app-bar-sub   { font-size: 12px; opacity: .6; margin-top: 1px; }
+    .app-bar-link  {
+      font-size: 13px; color: rgba(255,255,255,.7);
+      text-decoration: none; padding: 6px 12px;
+      border: 1px solid rgba(255,255,255,.25);
+      border-radius: 7px;
+      transition: background .15s;
+    }
+    .app-bar-link:hover { background: rgba(255,255,255,.1); color: #fff; }
+
+    /* ── Screens ─────────────────────────────────────────────────────── */
+    .screen        { display: none; }
+    .screen.active { display: block; }
+
+    .container {
+      max-width: 860px;
+      margin: 0 auto;
+      padding: 28px 16px 56px;
+    }
+
+    /* ── Cards ───────────────────────────────────────────────────────── */
+    .card {
+      background: var(--white);
+      border-radius: 12px;
+      box-shadow: 0 1px 3px rgba(0,0,0,.08);
+      margin-bottom: 18px;
+      overflow: hidden;
+    }
+    .card-head {
+      padding: 14px 20px;
+      border-bottom: 1px solid var(--border);
+      display: flex; align-items: center; justify-content: space-between;
+    }
+    .card-head-left { display: flex; align-items: center; gap: 10px; }
+    .card-head-icon {
+      width: 30px; height: 30px; border-radius: 7px;
+      background: #EFF6FF;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 15px;
+    }
+    .card-head h2 { font-size: 14px; font-weight: 700; }
+    .card-body    { padding: 20px; }
+
+    /* ── Form grid ───────────────────────────────────────────────────── */
+    .grid  { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+    .col-2 { grid-column: span 2; }
+    .col-3 { grid-template-columns: 1fr 1fr 1fr; }
+    @media (max-width: 580px) {
+      .grid, .grid.col-3 { grid-template-columns: 1fr; }
+      .col-2 { grid-column: span 1; }
+    }
+    .field { display: flex; flex-direction: column; gap: 5px; }
+    label {
+      font-size: 12px; font-weight: 700; color: var(--muted);
+      text-transform: uppercase; letter-spacing: .5px;
+    }
+    input[type="text"], input[type="number"], input[type="date"], select {
+      width: 100%;
+      padding: 10px 12px;
+      border: 1.5px solid var(--border);
+      border-radius: 8px;
+      font-size: 15px; color: var(--text);
+      background: var(--white);
+      transition: border-color .15s, box-shadow .15s;
+      font-family: inherit; outline: none;
+    }
+    input:focus, select:focus {
+      border-color: var(--primary);
+      box-shadow: 0 0 0 3px rgba(27,79,204,.1);
+    }
+
+    /* ── Toggle ──────────────────────────────────────────────────────── */
+    .toggle-row {
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 12px 0; border-bottom: 1px solid var(--border);
+    }
+    .toggle-row:last-child { border-bottom: none; }
+    .toggle-label { font-size: 14px; font-weight: 600; }
+    .toggle-hint  { font-size: 12px; color: var(--muted); margin-top: 2px; }
+    .toggle-switch { position: relative; width: 44px; height: 24px; flex-shrink: 0; }
+    .toggle-switch input { opacity: 0; width: 0; height: 0; }
+    .slider {
+      position: absolute; inset: 0; background: #CBD5E1;
+      border-radius: 12px; cursor: pointer; transition: background .2s;
+    }
+    .slider::before {
+      content: ''; position: absolute;
+      width: 18px; height: 18px; left: 3px; top: 3px;
+      background: #fff; border-radius: 50%;
+      transition: transform .2s; box-shadow: 0 1px 3px rgba(0,0,0,.15);
+    }
+    .toggle-switch input:checked + .slider { background: var(--primary); }
+    .toggle-switch input:checked + .slider::before { transform: translateX(20px); }
+
+    /* ── Buttons ─────────────────────────────────────────────────────── */
+    .btn-primary {
+      display: block; width: 100%;
+      padding: 14px 24px;
+      background: var(--primary); color: #fff;
+      border: none; border-radius: 10px;
+      font-size: 16px; font-weight: 700;
+      cursor: pointer; font-family: inherit;
+      transition: background .15s;
+    }
+    .btn-primary:hover { background: var(--primary-dark); }
+
+    .btn-outline {
+      padding: 9px 18px;
+      background: transparent; color: var(--primary);
+      border: 1.5px solid var(--primary); border-radius: 8px;
+      font-size: 13px; font-weight: 600;
+      cursor: pointer; font-family: inherit; transition: background .15s;
+      white-space: nowrap;
+    }
+    .btn-outline:hover { background: #EFF6FF; }
+
+    .btn-ghost {
+      padding: 9px 18px;
+      background: transparent; color: var(--muted);
+      border: 1.5px solid var(--border); border-radius: 8px;
+      font-size: 13px; font-weight: 600;
+      cursor: pointer; font-family: inherit; transition: background .15s;
+      white-space: nowrap;
+    }
+    .btn-ghost:hover { background: var(--bg); }
+
+    .btn-success {
+      padding: 9px 18px;
+      background: var(--success); color: #fff;
+      border: none; border-radius: 8px;
+      font-size: 13px; font-weight: 600;
+      cursor: pointer; font-family: inherit;
+      white-space: nowrap;
+    }
+    .btn-success:hover { background: #047857; }
+
+    .btn-print {
+      padding: 10px 20px;
+      background: var(--primary); color: #fff;
+      border: none; border-radius: 8px;
+      font-size: 14px; font-weight: 600;
+      cursor: pointer; font-family: inherit;
+    }
+    .btn-print:hover { background: var(--primary-dark); }
+
+    /* ── Error ───────────────────────────────────────────────────────── */
+    .error-box {
+      background: #FEF2F2; border: 1px solid #FECACA;
+      border-radius: 10px; padding: 14px 16px;
+      color: var(--danger); margin-bottom: 16px;
+      font-size: 14px; display: none;
+    }
+
+    /* ── Empty state ─────────────────────────────────────────────────── */
+    .empty-state {
+      text-align: center; padding: 64px 24px;
+      color: var(--muted);
+    }
+    .empty-state-icon { font-size: 48px; margin-bottom: 16px; }
+    .empty-state h3   { font-size: 18px; font-weight: 700; color: var(--text); margin-bottom: 8px; }
+    .empty-state p    { font-size: 14px; max-width: 360px; margin: 0 auto 24px; }
+
+    /* ── Dashboard header ────────────────────────────────────────────── */
+    .dash-header {
+      display: flex; align-items: center; justify-content: space-between;
+      margin-bottom: 24px; flex-wrap: wrap; gap: 12px;
+    }
+    .dash-title { font-size: 22px; font-weight: 800; letter-spacing: -.5px; }
+    .dash-sub   { font-size: 14px; color: var(--muted); margin-top: 2px; }
+
+    /* ── Dossier card ────────────────────────────────────────────────── */
+    .dossier-card {
+      background: var(--white);
+      border-radius: 12px;
+      box-shadow: 0 1px 3px rgba(0,0,0,.08);
+      margin-bottom: 12px;
+      padding: 18px 20px;
+      display: flex; align-items: center; gap: 16px;
+      flex-wrap: wrap;
+    }
+    .dossier-card.paid { opacity: .55; }
+
+    .dossier-overdue {
+      min-width: 68px;
+      text-align: center;
+      padding: 8px 6px;
+      border-radius: 9px;
+      flex-shrink: 0;
+    }
+    .dossier-overdue .days { font-size: 22px; font-weight: 800; line-height: 1; }
+    .dossier-overdue .lbl  { font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: .5px; margin-top: 2px; }
+
+    .ov-ok     { background: #ECFDF5; color: var(--success); }
+    .ov-yellow { background: #FFFBEB; color: var(--warning); }
+    .ov-orange { background: #FFF7ED; color: var(--orange); }
+    .ov-red    { background: #FEF2F2; color: var(--danger); }
+
+    .dossier-info { flex: 1; min-width: 180px; }
+    .dossier-name { font-size: 16px; font-weight: 700; }
+    .dossier-meta { font-size: 13px; color: var(--muted); margin-top: 2px; }
+
+    .dossier-amount {
+      text-align: right; flex-shrink: 0;
+    }
+    .dossier-amount .amt { font-size: 18px; font-weight: 800; color: var(--text); }
+    .dossier-amount .sub { font-size: 12px; color: var(--muted); margin-top: 1px; }
+
+    .dossier-stage { flex-shrink: 0; }
+    .stage-badge {
+      display: inline-flex; align-items: center; gap: 5px;
+      padding: 5px 10px; border-radius: 100px;
+      font-size: 12px; font-weight: 700;
+      white-space: nowrap;
+    }
+    .stage-0 { background: #F1F5F9; color: var(--muted); }
+    .stage-1 { background: #FFFBEB; color: var(--warning); }
+    .stage-2 { background: #FFF7ED; color: var(--orange); }
+    .stage-3 { background: #FEF2F2; color: var(--danger); }
+    .stage-paid { background: #ECFDF5; color: var(--success); }
+
+    .dossier-actions {
+      display: flex; gap: 8px; flex-wrap: wrap;
+    }
+
+    /* ── Belgian law info box ─────────────────────────────────────────── */
+    .law-box {
+      border-radius: 10px; padding: 14px 16px;
+      margin-bottom: 20px; font-size: 13px; line-height: 1.6;
+    }
+    .law-box.b2c { background: #EFF6FF; border: 1px solid #BFDBFE; color: #1e40af; }
+    .law-box.b2b { background: #F5F3FF; border: 1px solid #DDD6FE; color: #5b21b6; }
+    .law-box strong { font-weight: 700; display: block; margin-bottom: 4px; }
+
+    /* ── Letter preview actions ───────────────────────────────────────── */
+    .letter-actions {
+      display: flex; gap: 12px; margin-bottom: 24px;
+      flex-wrap: wrap; align-items: center;
+    }
+
+    /* ── Letter document ─────────────────────────────────────────────── */
+    .letter-doc {
+      background: #fff;
+      border-radius: 12px;
+      box-shadow: 0 4px 12px rgba(0,0,0,.1);
+    }
+    .letter-body { padding: 44px 52px; font-size: 14px; }
+    @media (max-width: 560px) { .letter-body { padding: 24px 20px; } }
+
+    .letter-sender { margin-bottom: 32px; }
+    .letter-sender-name { font-size: 17px; font-weight: 800; color: var(--primary-dark); }
+    .letter-sender-sub  { font-size: 13px; color: var(--muted); line-height: 1.7; margin-top: 3px; }
+
+    .letter-recipient {
+      margin-bottom: 32px;
+    }
+    .letter-recipient-label {
+      font-size: 11px; font-weight: 700; color: var(--muted);
+      text-transform: uppercase; letter-spacing: .8px; margin-bottom: 6px;
+    }
+    .letter-recipient-name { font-weight: 700; font-size: 15px; }
+    .letter-recipient-addr { font-size: 13px; color: var(--muted); margin-top: 2px; line-height: 1.6; }
+
+    .letter-meta {
+      display: flex; justify-content: space-between; align-items: flex-start;
+      margin-bottom: 28px; flex-wrap: wrap; gap: 12px;
+    }
+    .letter-date { font-size: 13px; color: var(--muted); }
+    .letter-subject {
+      font-size: 15px; font-weight: 800;
+      color: var(--text); letter-spacing: -.2px;
+    }
+    .letter-stage-label {
+      display: inline-block;
+      padding: 4px 10px; border-radius: 100px;
+      font-size: 11px; font-weight: 700;
+      text-transform: uppercase; letter-spacing: .5px;
+    }
+
+    .letter-body-text { font-size: 14px; color: var(--text); line-height: 1.8; }
+    .letter-body-text p { margin-bottom: 16px; }
+
+    .letter-table {
+      width: 100%; border-collapse: collapse;
+      margin: 20px 0; font-size: 14px;
+    }
+    .letter-table th {
+      font-size: 11px; font-weight: 700; color: var(--muted);
+      text-transform: uppercase; letter-spacing: .5px;
+      padding: 8px 10px; border-bottom: 2px solid var(--border); text-align: left;
+    }
+    .letter-table th.right { text-align: right; }
+    .letter-table td {
+      padding: 10px 10px; border-bottom: 1px solid #F1F5F9; vertical-align: top;
+    }
+    .letter-table td.right { text-align: right; font-weight: 600; white-space: nowrap; }
+    .letter-table tr:last-child td { border-bottom: none; }
+    .letter-table tr.total td { border-top: 2px solid var(--text); font-weight: 800; font-size: 15px; }
+    .letter-table tr.total td.right { color: var(--primary-dark); }
+
+    .letter-closing { margin-top: 32px; }
+    .letter-sig     { margin-top: 40px; }
+    .letter-sig-name { font-weight: 700; }
+    .letter-sig-sub  { font-size: 13px; color: var(--muted); margin-top: 2px; }
+
+    .letter-legal {
+      margin-top: 32px; padding-top: 20px;
+      border-top: 1px solid var(--border);
+      font-size: 11px; color: var(--muted); line-height: 1.6;
+    }
+
+    .disclaimer {
+      font-size: 12px; color: var(--muted);
+      margin-top: 14px; text-align: center; padding: 0 8px;
+    }
+
+    /* ── Print ───────────────────────────────────────────────────────── */
+    @media print {
+      body { background: #fff; }
+      .app-bar, .letter-actions, .law-box,
+      .disclaimer, .no-print { display: none !important; }
+      .container  { padding: 0; max-width: none; }
+      .letter-doc { box-shadow: none; border-radius: 0; }
+      .letter-body { padding: 15mm 18mm; }
+      .screen     { display: block !important; }
+      #screen1    { display: none !important; }
+      #screen2    { display: none !important; }
+      @page       { margin: 0; size: A4; }
+    }
+  </style>
+</head>
+<body>
+
+<div class="app-bar">
+  <div class="app-bar-left">
+    <div style="font-size:22px;">📋</div>
+    <div>
+      <div class="app-bar-title">Betalingsherinneringen</div>
+      <div class="app-bar-sub">Belgisch aanmaningssysteem · B2C & B2B</div>
+    </div>
+  </div>
+  <a class="app-bar-link" href="index.html">← Factuur generator</a>
+</div>
+
+<!-- ══════════════════════════════════════
+     SCREEN 1 — DASHBOARD
+══════════════════════════════════════ -->
+<div id="screen1" class="screen active">
+  <div class="container">
+
+    <div class="dash-header">
+      <div>
+        <div class="dash-title">Openstaande facturen</div>
+        <div class="dash-sub">Beheer uw aanmaningsdossiers</div>
+      </div>
+      <button class="btn-primary" style="width:auto; padding:11px 22px;" onclick="show('screen2')">
+        + Dossier toevoegen
+      </button>
+    </div>
+
+    <div id="dossierList"></div>
+
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════
+     SCREEN 2 — NIEUW DOSSIER
+══════════════════════════════════════ -->
+<div id="screen2" class="screen">
+  <div class="container">
+
+    <div style="display:flex; align-items:center; gap:12px; margin-bottom:24px;">
+      <button class="btn-ghost" onclick="show('screen1')">← Terug</button>
+      <div>
+        <div style="font-size:18px; font-weight:800;">Nieuw dossier</div>
+        <div style="font-size:13px; color:var(--muted);">Voeg een onbetaalde factuur toe</div>
+      </div>
+    </div>
+
+    <div id="formErrorBox" class="error-box"></div>
+
+    <!-- Your company -->
+    <div class="card">
+      <div class="card-head">
+        <div class="card-head-left">
+          <div class="card-head-icon">🏢</div>
+          <h2>Uw bedrijfsgegevens</h2>
+        </div>
+      </div>
+      <div class="card-body">
+        <div class="grid">
+          <div class="field col-2">
+            <label>Bedrijfsnaam</label>
+            <input type="text" id="f_companyName" placeholder="Loodgieters Janssen & Zonen" />
+          </div>
+          <div class="field">
+            <label>BTW-nummer</label>
+            <input type="text" id="f_vatNumber" placeholder="BE 0123.456.789" />
+          </div>
+          <div class="field">
+            <label>IBAN</label>
+            <input type="text" id="f_iban" placeholder="BE68 5390 0754 7034" />
+          </div>
+          <div class="field col-2">
+            <label>Adres</label>
+            <input type="text" id="f_companyAddress" placeholder="Keizerslaan 5, 1000 Brussel" />
+          </div>
+          <div class="field">
+            <label>E-mail (optioneel)</label>
+            <input type="text" id="f_companyEmail" placeholder="info@loodgietersbedrijf.be" />
+          </div>
+          <div class="field">
+            <label>Telefoon (optioneel)</label>
+            <input type="text" id="f_companyPhone" placeholder="+32 2 123 45 67" />
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Client -->
+    <div class="card">
+      <div class="card-head">
+        <div class="card-head-left">
+          <div class="card-head-icon">👤</div>
+          <h2>Klantgegevens</h2>
+        </div>
+      </div>
+      <div class="card-body">
+        <div class="grid">
+          <div class="field col-2">
+            <label>Naam klant of bedrijf</label>
+            <input type="text" id="f_clientName" placeholder="Familie Peeters of Renovatie NV" />
+          </div>
+          <div class="field col-2">
+            <label>Adres klant</label>
+            <input type="text" id="f_clientAddress" placeholder="Kerkstraat 45, 9000 Gent" />
+          </div>
+        </div>
+        <div style="margin-top:16px; padding-top:16px; border-top:1px solid var(--border);">
+          <div class="toggle-row" style="border-bottom:none;">
+            <div>
+              <div class="toggle-label">B2B klant (bedrijf)</div>
+              <div class="toggle-hint">Andere regels: interest vanaf vervaldatum, €40 forfait</div>
+            </div>
+            <label class="toggle-switch">
+              <input type="checkbox" id="f_isB2B" />
+              <span class="slider"></span>
+            </label>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Invoice details -->
+    <div class="card">
+      <div class="card-head">
+        <div class="card-head-left">
+          <div class="card-head-icon">🧾</div>
+          <h2>Factuurgegevens</h2>
+        </div>
+      </div>
+      <div class="card-body">
+        <div class="grid">
+          <div class="field">
+            <label>Factuurnummer</label>
+            <input type="text" id="f_invoiceNumber" placeholder="2026-0001" />
+          </div>
+          <div class="field">
+            <label>Factuurbedrag (€, incl. BTW)</label>
+            <input type="number" id="f_amount" placeholder="450.50" min="0" step="0.01" />
+          </div>
+          <div class="field">
+            <label>Factuurdatum</label>
+            <input type="date" id="f_invoiceDate" />
+          </div>
+          <div class="field">
+            <label>Vervaldatum</label>
+            <input type="date" id="f_dueDate" />
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <button class="btn-primary" onclick="saveDossier()">Dossier aanmaken</button>
+
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════
+     SCREEN 3 — BRIEF PREVIEW
+══════════════════════════════════════ -->
+<div id="screen3" class="screen">
+  <div class="container">
+
+    <div class="letter-actions no-print">
+      <button class="btn-ghost"  onclick="show('screen1')">← Terug</button>
+      <button class="btn-print"  onclick="window.print()">🖨️ &nbsp;Afdrukken / PDF</button>
+      <button class="btn-success" id="markSentBtn" onclick="markSent()">✓ Markeer als verzonden</button>
+    </div>
+
+    <div id="lawBox"></div>
+
+    <div class="letter-doc">
+      <div class="letter-body" id="letterContent"></div>
+    </div>
+
+    <p class="disclaimer no-print">
+      Controleer alle bedragen vóór verzending. Bewaar een kopie van elke verzonden aanmaning.
+    </p>
+
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════
+     JAVASCRIPT
+══════════════════════════════════════ -->
+<script>
+// ── Data layer ────────────────────────────────────────────────────────────────
+function loadDossiers() {
+  return JSON.parse(localStorage.getItem('dossiers') || '[]');
+}
+function saveDossiers(list) {
+  localStorage.setItem('dossiers', JSON.stringify(list));
+}
+function getDossier(id) {
+  return loadDossiers().find(d => d.id === id) || null;
+}
+function updateDossier(id, patch) {
+  const list = loadDossiers();
+  const idx  = list.findIndex(d => d.id === id);
+  if (idx !== -1) { list[idx] = { ...list[idx], ...patch }; saveDossiers(list); }
+}
+
+// ── Current letter context ────────────────────────────────────────────────────
+let currentDossierId = null;
+let currentStage     = null;
+
+// ── Screen ────────────────────────────────────────────────────────────────────
+function show(id) {
+  ['screen1','screen2','screen3'].forEach(s =>
+    document.getElementById(s).classList.toggle('active', s === id));
+  window.scrollTo(0, 0);
+  if (id === 'screen1') renderDashboard();
+}
+
+// ── Init ──────────────────────────────────────────────────────────────────────
+document.addEventListener('DOMContentLoaded', () => {
+  loadCompanyIntoForm();
+  setDefaultDates();
+  renderDashboard();
+});
+
+function loadCompanyIntoForm() {
+  const d = JSON.parse(localStorage.getItem('company') || 'null');
+  if (!d) return;
+  document.getElementById('f_companyName').value    = d.companyName    || '';
+  document.getElementById('f_vatNumber').value      = d.vatNumber      || '';
+  document.getElementById('f_iban').value           = d.iban           || '';
+  document.getElementById('f_companyAddress').value = d.companyAddress || '';
+}
+
+function setDefaultDates() {
+  const today    = new Date();
+  const in30days = new Date(); in30days.setDate(today.getDate() + 30);
+  document.getElementById('f_invoiceDate').value = toISO(today);
+  document.getElementById('f_dueDate').value     = toISO(in30days);
+}
+
+// ── Helpers ───────────────────────────────────────────────────────────────────
+function toISO(d)   { return d.toISOString().split('T')[0]; }
+function fromISO(s) {
+  const [y, m, d] = s.split('-');
+  return new Date(+y, +m - 1, +d);
+}
+function formatBE(s) {
+  if (!s) return '';
+  const d = fromISO(s);
+  return d.toLocaleDateString('nl-BE', { day:'2-digit', month:'2-digit', year:'numeric' });
+}
+function eur(n) {
+  return '€ ' + parseFloat(n).toLocaleString('nl-BE', {
+    minimumFractionDigits: 2, maximumFractionDigits: 2,
+  });
+}
+function daysOverdue(dueDateISO) {
+  const due   = fromISO(dueDateISO);
+  const today = new Date(); today.setHours(0,0,0,0);
+  return Math.max(0, Math.floor((today - due) / 86400000));
+}
+function ovdueClass(days) {
+  if (days === 0) return 'ov-ok';
+  if (days <= 14) return 'ov-yellow';
+  if (days <= 45) return 'ov-orange';
+  return 'ov-red';
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// BELGIAN LAW — FINANCIAL CALCULATIONS
+//
+// B2C (Boek XIX WER, van kracht 01/09/2023):
+//   Stage 1: Gratis eerste aanmaning — verplicht, geen kosten/interest
+//   Stage 2: Aanmaning — kosten + interest VANAF de aanmaningsdatum
+//   Stage 3: Ingebrekestelling — cumulatief
+//   Aanmaningskosten: ≤€150 → €7.50 | ≤€500 → €15 | >€500 → €25
+//   Interestvoet: max 12% per jaar
+//
+// B2B (Wet 02/08/2002 betalingsachterstand handelstransacties):
+//   Interest: vanaf dag na vervaldatum, ECB-referentierente + 8pp
+//   Forfaitaire invorderingsvergoeding: min €40
+//   Interestvoet default: 12% per jaar (ref ~3% + 8% + marge)
+// ─────────────────────────────────────────────────────────────────────────────
+const B2C_INTEREST_RATE = 0.12;  // 12% per jaar
+const B2B_INTEREST_RATE = 0.12;  // referentierente + 8pp (ca. 12% in 2026)
+const B2B_FLAT_FEE      = 40;    // €40 forfaitaire invorderingsvergoeding
+
+function b2cReminderCost(amount) {
+  if (amount <= 150)  return 7.50;
+  if (amount <= 500)  return 15.00;
+  return 25.00;
+}
+
+// B2C: interest loopt vanaf de datum van stage 2 (aanmaning)
+function calcB2CInterest(amount, stage2DateISO) {
+  if (!stage2DateISO) return 0;
+  const start  = fromISO(stage2DateISO);
+  const today  = new Date(); today.setHours(0,0,0,0);
+  const days   = Math.max(0, Math.floor((today - start) / 86400000));
+  return amount * B2C_INTEREST_RATE * days / 365;
+}
+
+// B2B: interest loopt vanaf dag na vervaldatum
+function calcB2BInterest(amount, dueDateISO) {
+  const start  = fromISO(dueDateISO); start.setDate(start.getDate() + 1);
+  const today  = new Date(); today.setHours(0,0,0,0);
+  const days   = Math.max(0, Math.floor((today - start) / 86400000));
+  return { interest: amount * B2B_INTEREST_RATE * days / 365, days };
+}
+
+// ── Validate form ─────────────────────────────────────────────────────────────
+function validateForm() {
+  const required = [
+    ['f_companyName',    'Bedrijfsnaam'],
+    ['f_vatNumber',      'BTW-nummer'],
+    ['f_iban',           'IBAN'],
+    ['f_clientName',     'Naam klant'],
+    ['f_clientAddress',  'Adres klant'],
+    ['f_invoiceNumber',  'Factuurnummer'],
+    ['f_amount',         'Factuurbedrag'],
+    ['f_invoiceDate',    'Factuurdatum'],
+    ['f_dueDate',        'Vervaldatum'],
+  ];
+  for (const [id, lbl] of required) {
+    if (!document.getElementById(id).value.trim())
+      return `Veld "${lbl}" is verplicht.`;
+  }
+  if (parseFloat(document.getElementById('f_amount').value) <= 0)
+    return 'Factuurbedrag moet groter zijn dan 0.';
+  return null;
+}
+
+// ── Save dossier ──────────────────────────────────────────────────────────────
+function saveDossier() {
+  const errBox = document.getElementById('formErrorBox');
+  errBox.style.display = 'none';
+
+  const err = validateForm();
+  if (err) { errBox.textContent = err; errBox.style.display = 'block'; return; }
+
+  const dossier = {
+    id:             'dos_' + Date.now(),
+    companyName:    document.getElementById('f_companyName').value.trim(),
+    vatNumber:      document.getElementById('f_vatNumber').value.trim(),
+    iban:           document.getElementById('f_iban').value.trim(),
+    companyAddress: document.getElementById('f_companyAddress').value.trim(),
+    companyEmail:   document.getElementById('f_companyEmail').value.trim(),
+    companyPhone:   document.getElementById('f_companyPhone').value.trim(),
+    clientName:     document.getElementById('f_clientName').value.trim(),
+    clientAddress:  document.getElementById('f_clientAddress').value.trim(),
+    isB2B:          document.getElementById('f_isB2B').checked,
+    invoiceNumber:  document.getElementById('f_invoiceNumber').value.trim(),
+    amount:         parseFloat(document.getElementById('f_amount').value),
+    invoiceDate:    document.getElementById('f_invoiceDate').value,
+    dueDate:        document.getElementById('f_dueDate').value,
+    stage:          0,          // 0 = no reminder sent yet
+    reminderDates:  [],         // ISO dates of stages 1, 2, 3 when marked sent
+    status:         'unpaid',
+  };
+
+  const list = loadDossiers();
+  list.unshift(dossier);
+  saveDossiers(list);
+  show('screen1');
+}
+
+// ── Mark as paid ──────────────────────────────────────────────────────────────
+function markPaid(id) {
+  updateDossier(id, { status: 'paid' });
+  renderDashboard();
+}
+
+// ── Generate letter for next stage ────────────────────────────────────────────
+function openLetter(id) {
+  const d = getDossier(id);
+  if (!d) return;
+
+  currentDossierId = id;
+  currentStage     = d.stage + 1; // next stage to send
+
+  const maxStage = 3;
+  if (currentStage > maxStage) {
+    alert('Alle drie stadia zijn reeds verzonden. Overweeg gerechtelijke stappen of een incassobureau.');
+    return;
+  }
+
+  // Law info box
+  const lawBox = document.getElementById('lawBox');
+  if (d.isB2B) {
+    lawBox.innerHTML = `
+      <div class="law-box b2b no-print">
+        <strong>B2B — Wet 02/08/2002 (betalingsachterstand handelstransacties)</strong>
+        Interest loopt automatisch vanaf de dag na de vervaldatum aan ${(B2B_INTEREST_RATE*100).toFixed(1)}% per jaar
+        (ECB-referentierente + 8 procentpunten). Forfaitaire invorderingsvergoeding: minimum €${B2B_FLAT_FEE}.
+        Geen verplichte kosteloze eerste aanmaning vereist voor B2B.
+      </div>`;
+  } else {
+    lawBox.innerHTML = `
+      <div class="law-box b2c no-print">
+        <strong>B2C — Boek XIX WER (van kracht 01/09/2023)</strong>
+        ${currentStage === 1
+          ? 'Stadium 1: <strong>verplicht kosteloze eerste aanmaning</strong>. U mag nog geen kosten of interest aanrekenen. Geef de klant minimaal 14 dagen om te betalen.'
+          : currentStage === 2
+          ? `Stadium 2: aanmaningskosten ${eur(b2cReminderCost(d.amount))} + interest ${(B2C_INTEREST_RATE*100).toFixed(0)}% per jaar (loopt vanaf de datum van deze aanmaning). Geef 7 dagen om te betalen.`
+          : `Stadium 3: ingebrekestelling. Vermeld alle eerdere aanmaningen en cumulatieve bedragen. Wijs op mogelijke gerechtelijke procedure.`
+        }
+      </div>`;
+  }
+
+  // Mark sent button visibility
+  document.getElementById('markSentBtn').style.display = 'inline-block';
+
+  // Render letter
+  document.getElementById('letterContent').innerHTML = d.isB2B
+    ? renderB2BLetter(d, currentStage)
+    : renderB2CLetter(d, currentStage);
+
+  show('screen3');
+}
+
+// ── Mark letter as sent → advance stage ──────────────────────────────────────
+function markSent() {
+  if (!currentDossierId) return;
+  const d    = getDossier(currentDossierId);
+  const list = loadDossiers();
+  const idx  = list.findIndex(x => x.id === currentDossierId);
+  if (idx === -1) return;
+
+  list[idx].stage = currentStage;
+  list[idx].reminderDates = [...(list[idx].reminderDates || [])];
+  list[idx].reminderDates[currentStage - 1] = toISO(new Date());
+  saveDossiers(list);
+
+  document.getElementById('markSentBtn').style.display = 'none';
+  show('screen1');
+}
+
+// ── Dashboard render ──────────────────────────────────────────────────────────
+function renderDashboard() {
+  const list = loadDossiers();
+  const el   = document.getElementById('dossierList');
+
+  if (list.length === 0) {
+    el.innerHTML = `
+      <div class="empty-state">
+        <div class="empty-state-icon">📭</div>
+        <h3>Geen dossiers</h3>
+        <p>Klik op "+ Dossier toevoegen" hierboven om te starten met de aanmaningsprocedure.</p>
+      </div>`;
+    return;
+  }
+
+  const stageLabels = ['Geen aanmaning', 'Herinnering verstuurd', 'Aanmaning verstuurd', 'Ingebrekestelling'];
+
+  el.innerHTML = list.map(d => {
+    const days   = daysOverdue(d.dueDate);
+    const ovCls  = d.status === 'paid' ? 'ov-ok' : ovdueClass(days);
+    const paid   = d.status === 'paid';
+    const badge  = paid
+      ? `<span class="stage-badge stage-paid">✓ Betaald</span>`
+      : `<span class="stage-badge stage-${d.stage}">${stageLabels[d.stage] || ''}</span>`;
+
+    const nextStageLabel = paid ? '' : d.stage < 3
+      ? ['Stuur herinnering', 'Stuur aanmaning', 'Stuur ingebrekestelling'][d.stage]
+      : 'Incasso / rechtbank';
+
+    const actionsHtml = paid
+      ? `<button class="btn-ghost" onclick="deleteDossier('${d.id}')">Verwijder</button>`
+      : `
+        ${d.stage < 3
+          ? `<button class="btn-outline" onclick="openLetter('${d.id}')">${nextStageLabel} →</button>`
+          : `<span style="font-size:13px;color:var(--danger);font-weight:600;">Alle stadia voltooid</span>`
+        }
+        <button class="btn-success" onclick="markPaid('${d.id}')">✓ Betaald</button>
+        <button class="btn-ghost"   onclick="deleteDossier('${d.id}')">✕</button>`;
+
+    return `
+      <div class="dossier-card ${paid ? 'paid' : ''}">
+        <div class="dossier-overdue ${ovCls}">
+          <div class="days">${days}</div>
+          <div class="lbl">${days === 1 ? 'dag' : 'dagen'}</div>
+        </div>
+        <div class="dossier-info">
+          <div class="dossier-name">${d.clientName}</div>
+          <div class="dossier-meta">
+            Factuur ${d.invoiceNumber} · Vervallen ${formatBE(d.dueDate)} · ${d.isB2B ? 'B2B' : 'Particulier'}
+          </div>
+        </div>
+        <div class="dossier-amount">
+          <div class="amt">${eur(d.amount)}</div>
+          <div class="sub">incl. BTW</div>
+        </div>
+        <div class="dossier-stage">${badge}</div>
+        <div class="dossier-actions">${actionsHtml}</div>
+      </div>`;
+  }).join('');
+}
+
+function deleteDossier(id) {
+  if (!confirm('Dossier verwijderen?')) return;
+  saveDossiers(loadDossiers().filter(d => d.id !== id));
+  renderDashboard();
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// LETTER TEMPLATES — Dutch, legally compliant
+// ─────────────────────────────────────────────────────────────────────────────
+
+function letterHeader(d) {
+  const contact = [d.companyEmail, d.companyPhone].filter(Boolean).join(' · ');
+  return `
+    <div class="letter-sender">
+      <div class="letter-sender-name">${d.companyName}</div>
+      <div class="letter-sender-sub">
+        BTW: ${d.vatNumber}<br>
+        ${d.companyAddress}
+        ${contact ? '<br>' + contact : ''}
+      </div>
+    </div>
+    <div class="letter-recipient">
+      <div class="letter-recipient-label">Aan</div>
+      <div class="letter-recipient-name">${d.clientName}</div>
+      <div class="letter-recipient-addr">${d.clientAddress}</div>
+    </div>`;
+}
+
+// ── B2C Letters ───────────────────────────────────────────────────────────────
+function renderB2CLetter(d, stage) {
+  const days       = daysOverdue(d.dueDate);
+  const cost       = b2cReminderCost(d.amount);
+  const stage2Date = d.reminderDates && d.reminderDates[1] ? d.reminderDates[1] : toISO(new Date());
+  const interest   = calcB2CInterest(d.amount, stage2Date);
+  const today      = formatBE(toISO(new Date()));
+
+  if (stage === 1) {
+    return letterHeader(d) + `
+      <div class="letter-meta">
+        <div class="letter-date">${d.companyAddress ? d.companyAddress.split(',').pop().trim() : ''}, ${today}</div>
+      </div>
+      <div class="letter-subject">Betreft: Herinnering — Factuur ${d.invoiceNumber}</div>
+      <div class="letter-stage-label" style="background:#FFFBEB;color:var(--warning);margin:10px 0 24px;">Stadium 1 van 3 — Kosteloze eerste aanmaning</div>
+
+      <div class="letter-body-text">
+        <p>Geachte ${d.clientName},</p>
+        <p>Wij nemen vriendelijk contact met u op in verband met onderstaande openstaande factuur.</p>
+      </div>
+
+      <table class="letter-table">
+        <thead><tr><th>Omschrijving</th><th class="right">Bedrag</th></tr></thead>
+        <tbody>
+          <tr><td>Factuur ${d.invoiceNumber} — factuurdatum ${formatBE(d.invoiceDate)}</td><td class="right">${eur(d.amount)}</td></tr>
+          <tr><td>Vervaldatum</td><td class="right">${formatBE(d.dueDate)}</td></tr>
+          <tr class="total"><td><strong>Openstaand bedrag</strong></td><td class="right"><strong>${eur(d.amount)}</strong></td></tr>
+        </tbody>
+      </table>
+
+      <div class="letter-body-text">
+        <p>Mogelijk is de betaling u ontgaan. Wij verzoeken u vriendelijk het openstaande bedrag te voldoen binnen <strong>14 dagen</strong> na ontvangst van deze brief.</p>
+        <p>Gelieve te betalen op rekeningnummer <strong>${d.iban}</strong> met vermelding van <strong>${d.invoiceNumber}</strong>.</p>
+        <p>Heeft u ondertussen reeds betaald? Dan kunt u dit schrijven als niet verzonden beschouwen. Bij vragen kunt u ons steeds contacteren.</p>
+      </div>
+
+      <div class="letter-closing">
+        <p>Met vriendelijke groeten,</p>
+        <div class="letter-sig">
+          <div class="letter-sig-name">${d.companyName}</div>
+          <div class="letter-sig-sub">BTW: ${d.vatNumber}</div>
+          ${d.companyEmail ? `<div class="letter-sig-sub">${d.companyEmail}</div>` : ''}
+        </div>
+      </div>
+
+      <div class="letter-legal">
+        Dit schrijven wordt u kosteloos bezorgd overeenkomstig artikel XIX.2 §1 van het Wetboek van Economisch Recht.
+        Betaalt u niet binnen 14 dagen, dan behouden wij ons het recht voor aanmaningskosten en verwijlinteresten aan te rekenen conform art. XIX.3 WER.
+      </div>`;
+  }
+
+  if (stage === 2) {
+    const stage1Date = d.reminderDates && d.reminderDates[0] ? formatBE(d.reminderDates[0]) : '(datum eerste herinnering)';
+    const total      = d.amount + cost;
+    return letterHeader(d) + `
+      <div class="letter-meta">
+        <div class="letter-date">${today}</div>
+      </div>
+      <div class="letter-subject">Betreft: Aanmaning — Factuur ${d.invoiceNumber}</div>
+      <div class="letter-stage-label" style="background:#FFF7ED;color:var(--orange);margin:10px 0 24px;">Stadium 2 van 3 — Formele aanmaning</div>
+
+      <div class="letter-body-text">
+        <p>Geachte ${d.clientName},</p>
+        <p>Ondanks onze herinnering van <strong>${stage1Date}</strong> stellen wij vast dat factuur <strong>${d.invoiceNumber}</strong> van ${formatBE(d.invoiceDate)} nog steeds onbetaald is.</p>
+        <p>U bent thans <strong>${days} dagen</strong> in betalingsachterstand. Wij verzoeken u dringend het onderstaande bedrag te voldoen binnen <strong>7 dagen</strong>.</p>
+      </div>
+
+      <table class="letter-table">
+        <thead><tr><th>Omschrijving</th><th class="right">Bedrag</th></tr></thead>
+        <tbody>
+          <tr><td>Openstaande factuur ${d.invoiceNumber}</td><td class="right">${eur(d.amount)}</td></tr>
+          <tr><td>Aanmaningskosten (art. XIX.3 WER — schuld ${eur(d.amount)})</td><td class="right">${eur(cost)}</td></tr>
+          <tr class="total"><td><strong>Totaal te betalen</strong></td><td class="right"><strong>${eur(total)}</strong></td></tr>
+        </tbody>
+      </table>
+
+      <div class="letter-body-text">
+        <p>Gelieve het totale bedrag van <strong>${eur(total)}</strong> te voldoen op <strong>${d.iban}</strong> met vermelding van <strong>${d.invoiceNumber}</strong>.</p>
+        <p>Betaalt u niet binnen de gestelde termijn, dan zijn wij genoodzaakt verdere stappen te ondernemen, met alle bijkomende kosten voor uw rekening.</p>
+      </div>
+
+      <div class="letter-closing">
+        <p>Met vriendelijke groeten,</p>
+        <div class="letter-sig">
+          <div class="letter-sig-name">${d.companyName}</div>
+          <div class="letter-sig-sub">BTW: ${d.vatNumber}</div>
+        </div>
+      </div>
+
+      <div class="letter-legal">
+        Aanmaningskosten conform art. XIX.3 van het Wetboek van Economisch Recht (Boek XIX — schulden van consumenten).
+        Verwijlinteresten van ${(B2C_INTEREST_RATE*100).toFixed(0)}% per jaar zijn verschuldigd vanaf de datum van deze aanmaning.
+      </div>`;
+  }
+
+  // Stage 3 — Ingebrekestelling
+  const stage1Date = d.reminderDates && d.reminderDates[0] ? formatBE(d.reminderDates[0]) : '—';
+  const stage2Date2 = d.reminderDates && d.reminderDates[1] ? formatBE(d.reminderDates[1]) : '—';
+  const intDays    = d.reminderDates && d.reminderDates[1]
+    ? Math.floor((new Date() - fromISO(d.reminderDates[1])) / 86400000)
+    : 0;
+  const intAmount  = parseFloat((d.amount * B2C_INTEREST_RATE * intDays / 365).toFixed(2));
+  const total3     = d.amount + cost + intAmount;
+
+  return letterHeader(d) + `
+    <div class="letter-meta">
+      <div class="letter-date">${today}</div>
+    </div>
+    <div class="letter-subject">Betreft: INGEBREKESTELLING — Factuur ${d.invoiceNumber}</div>
+    <div class="letter-stage-label" style="background:#FEF2F2;color:var(--danger);margin:10px 0 24px;">Stadium 3 van 3 — Formele ingebrekestelling</div>
+
+    <div class="letter-body-text">
+      <p>Geachte ${d.clientName},</p>
+      <p>Wij stellen u hierbij <strong>formeel in gebreke</strong> voor de betaling van factuur <strong>${d.invoiceNumber}</strong> van ${formatBE(d.invoiceDate)} ten bedrage van ${eur(d.amount)}.</p>
+      <p>Historiek van onze aanmaningen:</p>
+      <ul style="margin:0 0 16px 20px;">
+        <li>Kosteloze eerste herinnering: ${stage1Date}</li>
+        <li>Formele aanmaning: ${stage2Date2}</li>
+        <li>Huidig betalingsachterstand: ${days} dagen</li>
+      </ul>
+    </div>
+
+    <table class="letter-table">
+      <thead><tr><th>Omschrijving</th><th class="right">Bedrag</th></tr></thead>
+      <tbody>
+        <tr><td>Openstaande factuur ${d.invoiceNumber}</td><td class="right">${eur(d.amount)}</td></tr>
+        <tr><td>Aanmaningskosten (art. XIX.3 WER)</td><td class="right">${eur(cost)}</td></tr>
+        <tr><td>Verwijlinteresten ${(B2C_INTEREST_RATE*100).toFixed(0)}% per jaar (${intDays} dagen)</td><td class="right">${eur(intAmount)}</td></tr>
+        <tr class="total"><td><strong>Totaal verschuldigd</strong></td><td class="right"><strong>${eur(total3)}</strong></td></tr>
+      </tbody>
+    </table>
+
+    <div class="letter-body-text">
+      <p>Wij sommeren u het totale bedrag van <strong>${eur(total3)}</strong> te voldoen op <strong>${d.iban}</strong> met vermelding van <strong>${d.invoiceNumber}</strong> binnen <strong>7 dagen</strong> na dagtekening van dit schrijven.</p>
+      <p><strong>Bij uitblijven van betaling zullen wij uw dossier zonder verder bericht overdragen aan ons incassobureau of onze raadsman, waarbij alle bijkomende gerechtelijke en buitengerechtelijke kosten ten uwen laste zijn.</strong></p>
+    </div>
+
+    <div class="letter-closing">
+      <p>Hoogachtend,</p>
+      <div class="letter-sig">
+        <div class="letter-sig-name">${d.companyName}</div>
+        <div class="letter-sig-sub">BTW: ${d.vatNumber}</div>
+      </div>
+    </div>
+
+    <div class="letter-legal">
+      Ingebrekestelling overeenkomstig de bepalingen van Boek XIX van het Wetboek van Economisch Recht.
+      Wij raden aan dit schrijven te versturen per aangetekende post met ontvangstbevestiging.
+    </div>`;
+}
+
+// ── B2B Letters ───────────────────────────────────────────────────────────────
+function renderB2BLetter(d, stage) {
+  const { interest, days: intDays } = calcB2BInterest(d.amount, d.dueDate);
+  const overdDays = daysOverdue(d.dueDate);
+  const today     = formatBE(toISO(new Date()));
+
+  if (stage === 1) {
+    const total = d.amount + interest + B2B_FLAT_FEE;
+    return letterHeader(d) + `
+      <div class="letter-meta">
+        <div class="letter-date">${today}</div>
+      </div>
+      <div class="letter-subject">Betreft: Betalingsherinnering — Factuur ${d.invoiceNumber}</div>
+      <div class="letter-stage-label" style="background:#F5F3FF;color:#7C3AED;margin:10px 0 24px;">Stadium 1 van 3 — Herinnering</div>
+
+      <div class="letter-body-text">
+        <p>Geachte ${d.clientName},</p>
+        <p>Wij wijzen u op de onbetaalde factuur <strong>${d.invoiceNumber}</strong> van ${formatBE(d.invoiceDate)}, met vervaldatum ${formatBE(d.dueDate)}.</p>
+        <p>De factuur is sedert <strong>${overdDays} dagen</strong> vervallen. Conform de Wet van 2 augustus 2002 betreffende de bestrijding van de betalingsachterstand bij handelstransacties zijn wettelijke verwijlinteresten verschuldigd vanaf de dag volgend op de vervaldatum.</p>
+      </div>
+
+      <table class="letter-table">
+        <thead><tr><th>Omschrijving</th><th class="right">Bedrag</th></tr></thead>
+        <tbody>
+          <tr><td>Factuur ${d.invoiceNumber} (vervallen ${formatBE(d.dueDate)})</td><td class="right">${eur(d.amount)}</td></tr>
+          <tr><td>Wettelijke verwijlinteresten ${(B2B_INTEREST_RATE*100).toFixed(1)}% p.j. (${intDays} dagen)</td><td class="right">${eur(interest)}</td></tr>
+          <tr><td>Forfaitaire invorderingsvergoeding (art. 6 Wet 02/08/2002)</td><td class="right">${eur(B2B_FLAT_FEE)}</td></tr>
+          <tr class="total"><td><strong>Totaal te betalen</strong></td><td class="right"><strong>${eur(total)}</strong></td></tr>
+        </tbody>
+      </table>
+
+      <div class="letter-body-text">
+        <p>Wij verzoeken u het totale bedrag van <strong>${eur(total)}</strong> te voldoen binnen <strong>7 dagen</strong> op <strong>${d.iban}</strong> met vermelding van <strong>${d.invoiceNumber}</strong>.</p>
+        <p>Heeft u reeds betaald? Dan kunt u dit schrijven als niet verzonden beschouwen.</p>
+      </div>
+
+      <div class="letter-closing">
+        <p>Met vriendelijke groeten,</p>
+        <div class="letter-sig">
+          <div class="letter-sig-name">${d.companyName}</div>
+          <div class="letter-sig-sub">BTW: ${d.vatNumber}</div>
+        </div>
+      </div>
+
+      <div class="letter-legal">
+        Verwijlinteresten verschuldigd overeenkomstig de Wet van 2 augustus 2002 (BS 07/08/2002) betreffende de bestrijding van de betalingsachterstand bij handelstransacties, gewijzigd door de Wet van 22 november 2013.
+        Interestvoet: ECB-referentierente verhoogd met 8 procentpunten, van kracht voor het eerste semester van ${new Date().getFullYear()}.
+      </div>`;
+  }
+
+  if (stage === 2) {
+    const stage1Date = d.reminderDates && d.reminderDates[0] ? formatBE(d.reminderDates[0]) : '(datum eerste herinnering)';
+    const total      = d.amount + interest + B2B_FLAT_FEE;
+    return letterHeader(d) + `
+      <div class="letter-meta"><div class="letter-date">${today}</div></div>
+      <div class="letter-subject">Betreft: AANMANING — Factuur ${d.invoiceNumber}</div>
+      <div class="letter-stage-label" style="background:#FFF7ED;color:var(--orange);margin:10px 0 24px;">Stadium 2 van 3 — Formele aanmaning</div>
+
+      <div class="letter-body-text">
+        <p>Geachte ${d.clientName},</p>
+        <p>Ondanks onze herinnering van ${stage1Date} stellen wij vast dat factuur <strong>${d.invoiceNumber}</strong> nog steeds onbetaald is. U bent thans <strong>${overdDays} dagen</strong> in gebreke.</p>
+        <p>Wij verzoeken u dringend onderstaand bedrag te voldoen binnen <strong>7 dagen</strong>.</p>
+      </div>
+
+      <table class="letter-table">
+        <thead><tr><th>Omschrijving</th><th class="right">Bedrag</th></tr></thead>
+        <tbody>
+          <tr><td>Factuur ${d.invoiceNumber}</td><td class="right">${eur(d.amount)}</td></tr>
+          <tr><td>Verwijlinteresten ${(B2B_INTEREST_RATE*100).toFixed(1)}% p.j. (${intDays} dagen)</td><td class="right">${eur(interest)}</td></tr>
+          <tr><td>Forfaitaire invorderingsvergoeding</td><td class="right">${eur(B2B_FLAT_FEE)}</td></tr>
+          <tr class="total"><td><strong>Totaal te betalen</strong></td><td class="right"><strong>${eur(total)}</strong></td></tr>
+        </tbody>
+      </table>
+
+      <div class="letter-body-text">
+        <p>Betaal <strong>${eur(total)}</strong> op <strong>${d.iban}</strong>, vermelding <strong>${d.invoiceNumber}</strong>, binnen 7 dagen.</p>
+        <p>Bij uitblijven van betaling zullen verdere stappen worden ondernomen.</p>
+      </div>
+
+      <div class="letter-closing">
+        <p>Met vriendelijke groeten,</p>
+        <div class="letter-sig">
+          <div class="letter-sig-name">${d.companyName}</div>
+          <div class="letter-sig-sub">BTW: ${d.vatNumber}</div>
+        </div>
+      </div>`;
+  }
+
+  // Stage 3 — Ingebrekestelling B2B
+  const stage1Date = d.reminderDates && d.reminderDates[0] ? formatBE(d.reminderDates[0]) : '—';
+  const stage2Date = d.reminderDates && d.reminderDates[1] ? formatBE(d.reminderDates[1]) : '—';
+  const total3     = d.amount + interest + B2B_FLAT_FEE;
+
+  return letterHeader(d) + `
+    <div class="letter-meta"><div class="letter-date">${today}</div></div>
+    <div class="letter-subject">Betreft: INGEBREKESTELLING — Factuur ${d.invoiceNumber}</div>
+    <div class="letter-stage-label" style="background:#FEF2F2;color:var(--danger);margin:10px 0 24px;">Stadium 3 van 3 — Formele ingebrekestelling</div>
+
+    <div class="letter-body-text">
+      <p>Geachte ${d.clientName},</p>
+      <p>Wij stellen u hierbij <strong>formeel in gebreke</strong> voor de betaling van factuur <strong>${d.invoiceNumber}</strong>.</p>
+      <ul style="margin:0 0 16px 20px;">
+        <li>Eerste herinnering: ${stage1Date}</li>
+        <li>Formele aanmaning: ${stage2Date}</li>
+        <li>Betalingsachterstand: ${overdDays} dagen</li>
+      </ul>
+    </div>
+
+    <table class="letter-table">
+      <thead><tr><th>Omschrijving</th><th class="right">Bedrag</th></tr></thead>
+      <tbody>
+        <tr><td>Factuur ${d.invoiceNumber} (hoofdsom)</td><td class="right">${eur(d.amount)}</td></tr>
+        <tr><td>Verwijlinteresten ${(B2B_INTEREST_RATE*100).toFixed(1)}% p.j. (${intDays} dagen)</td><td class="right">${eur(interest)}</td></tr>
+        <tr><td>Forfaitaire invorderingsvergoeding</td><td class="right">${eur(B2B_FLAT_FEE)}</td></tr>
+        <tr class="total"><td><strong>Totaal verschuldigd</strong></td><td class="right"><strong>${eur(total3)}</strong></td></tr>
+      </tbody>
+    </table>
+
+    <div class="letter-body-text">
+      <p>Wij sommeren u het bedrag van <strong>${eur(total3)}</strong> te voldoen op <strong>${d.iban}</strong> met vermelding van <strong>${d.invoiceNumber}</strong> binnen <strong>7 dagen</strong> na dagtekening.</p>
+      <p><strong>Bij uitblijven van betaling zullen wij zonder verdere aankondiging gerechtelijke stappen ondernemen of het dossier overdragen aan een incassobureau, met alle bijkomende kosten voor uw rekening.</strong></p>
+    </div>
+
+    <div class="letter-closing">
+      <p>Hoogachtend,</p>
+      <div class="letter-sig">
+        <div class="letter-sig-name">${d.companyName}</div>
+        <div class="letter-sig-sub">BTW: ${d.vatNumber}</div>
+      </div>
+    </div>
+
+    <div class="letter-legal">
+      Ingebrekestelling conform de Wet van 2 augustus 2002 betreffende de bestrijding van de betalingsachterstand bij handelstransacties.
+      Wij raden aan dit schrijven te versturen per aangetekende post.
+    </div>`;
+}
+</script>
+</body>
+</html>

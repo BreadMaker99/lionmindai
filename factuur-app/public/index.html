@@ -1,0 +1,1195 @@
+<!DOCTYPE html>
+<html lang="nl">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Factuur Generator — Loodgieters België</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg:           #F1F5F9;
+      --white:        #FFFFFF;
+      --primary:      #1B4FCC;
+      --primary-dark: #102F8A;
+      --border:       #E2E8F0;
+      --text:         #0F172A;
+      --muted:        #64748B;
+      --danger:       #DC2626;
+      --success:      #059669;
+      --warning:      #D97706;
+      --purple:       #7C3AED;
+      --rec:          #DC2626;
+    }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      min-height: 100vh;
+      font-size: 15px;
+      line-height: 1.6;
+    }
+
+    /* ── App bar ─────────────────────────────────────────────────────────── */
+    .app-bar {
+      background: var(--primary-dark);
+      color: #fff;
+      padding: 14px 24px;
+      display: flex; align-items: center; gap: 14px;
+      position: sticky; top: 0; z-index: 50;
+    }
+    .app-bar-title { font-size: 17px; font-weight: 700; letter-spacing: -.3px; }
+    .app-bar-sub   { font-size: 12px; opacity: .6; margin-top: 1px; }
+
+    /* ── Screens ─────────────────────────────────────────────────────────── */
+    .screen        { display: none; }
+    .screen.active { display: block; }
+
+    .container {
+      max-width: 760px;
+      margin: 0 auto;
+      padding: 28px 16px 56px;
+    }
+
+    /* ── Cards ───────────────────────────────────────────────────────────── */
+    .card {
+      background: var(--white);
+      border-radius: 12px;
+      box-shadow: 0 1px 3px rgba(0,0,0,.08), 0 1px 2px rgba(0,0,0,.04);
+      margin-bottom: 18px;
+      overflow: hidden;
+    }
+    .card-head {
+      padding: 14px 20px;
+      border-bottom: 1px solid var(--border);
+      display: flex; align-items: center; justify-content: space-between;
+    }
+    .card-head-left { display: flex; align-items: center; gap: 10px; }
+    .card-head-icon {
+      width: 30px; height: 30px; border-radius: 7px;
+      background: #EFF6FF;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 15px;
+    }
+    .card-head h2  { font-size: 14px; font-weight: 700; }
+    .card-body     { padding: 20px; }
+
+    /* ── Form grid ───────────────────────────────────────────────────────── */
+    .grid  { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+    .col-2 { grid-column: span 2; }
+    @media (max-width: 560px) {
+      .grid  { grid-template-columns: 1fr; }
+      .col-2 { grid-column: span 1; }
+    }
+    .field { display: flex; flex-direction: column; gap: 5px; }
+    label {
+      font-size: 12px; font-weight: 700; color: var(--muted);
+      text-transform: uppercase; letter-spacing: .5px;
+    }
+    input[type="text"],
+    input[type="number"],
+    textarea {
+      width: 100%;
+      padding: 10px 12px;
+      border: 1.5px solid var(--border);
+      border-radius: 8px;
+      font-size: 15px; color: var(--text);
+      background: var(--white);
+      transition: border-color .15s, box-shadow .15s;
+      font-family: inherit; outline: none;
+    }
+    input:focus, textarea:focus {
+      border-color: var(--primary);
+      box-shadow: 0 0 0 3px rgba(27,79,204,.1);
+    }
+    textarea { resize: vertical; min-height: 80px; }
+
+    /* ── Toggle ──────────────────────────────────────────────────────────── */
+    .toggle-row {
+      display: flex; align-items: center;
+      justify-content: space-between;
+      padding: 13px 0; border-bottom: 1px solid var(--border);
+    }
+    .toggle-row:last-child { border-bottom: none; }
+    .toggle-label { font-size: 14px; font-weight: 600; }
+    .toggle-hint  { font-size: 12px; color: var(--muted); margin-top: 2px; }
+    .toggle-switch { position: relative; width: 44px; height: 24px; flex-shrink: 0; }
+    .toggle-switch input { opacity: 0; width: 0; height: 0; }
+    .slider {
+      position: absolute; inset: 0;
+      background: #CBD5E1; border-radius: 12px;
+      cursor: pointer; transition: background .2s;
+    }
+    .slider::before {
+      content: ''; position: absolute;
+      width: 18px; height: 18px; left: 3px; top: 3px;
+      background: #fff; border-radius: 50%;
+      transition: transform .2s; box-shadow: 0 1px 3px rgba(0,0,0,.15);
+    }
+    .toggle-switch input:checked + .slider { background: var(--primary); }
+    .toggle-switch input:checked + .slider::before { transform: translateX(20px); }
+
+    /* ── Buttons ─────────────────────────────────────────────────────────── */
+    .btn-primary {
+      display: block; width: 100%;
+      padding: 14px 24px;
+      background: var(--primary); color: #fff;
+      border: none; border-radius: 10px;
+      font-size: 16px; font-weight: 700;
+      cursor: pointer; font-family: inherit;
+      transition: background .15s, transform .1s;
+      letter-spacing: -.2px;
+    }
+    .btn-primary:hover  { background: var(--primary-dark); }
+    .btn-primary:active { transform: scale(.99); }
+
+    .btn-sm {
+      padding: 7px 14px;
+      background: transparent; color: var(--primary);
+      border: 1.5px solid var(--primary); border-radius: 7px;
+      font-size: 13px; font-weight: 600;
+      cursor: pointer; font-family: inherit;
+      transition: background .15s;
+      white-space: nowrap;
+    }
+    .btn-sm:hover { background: #EFF6FF; }
+
+    .btn-outline {
+      padding: 10px 20px;
+      background: transparent; color: var(--primary);
+      border: 1.5px solid var(--primary); border-radius: 8px;
+      font-size: 14px; font-weight: 600;
+      cursor: pointer; font-family: inherit; transition: background .15s;
+    }
+    .btn-outline:hover { background: #EFF6FF; }
+
+    .btn-print {
+      padding: 10px 20px;
+      background: var(--primary); color: #fff;
+      border: none; border-radius: 8px;
+      font-size: 14px; font-weight: 600;
+      cursor: pointer; font-family: inherit;
+    }
+    .btn-print:hover { background: var(--primary-dark); }
+
+    /* ── Save feedback ───────────────────────────────────────────────────── */
+    .saved-badge {
+      font-size: 12px; color: var(--success);
+      font-weight: 600; opacity: 0;
+      transition: opacity .3s;
+    }
+    .saved-badge.show { opacity: 1; }
+
+    /* ── Voice card ──────────────────────────────────────────────────────── */
+    .voice-card {
+      background: var(--primary-dark);
+      border-radius: 12px;
+      margin-bottom: 18px;
+      overflow: hidden;
+      box-shadow: 0 4px 12px rgba(16,47,138,.25);
+    }
+    .voice-card-head {
+      padding: 16px 20px 0;
+      color: #fff;
+    }
+    .voice-card-head h2 {
+      font-size: 15px; font-weight: 700; margin-bottom: 4px;
+    }
+    .voice-card-head p {
+      font-size: 13px; opacity: .7; line-height: 1.5;
+    }
+    .voice-card-body { padding: 20px; }
+
+    /* example phrase */
+    .voice-example {
+      background: rgba(255,255,255,.07);
+      border: 1px solid rgba(255,255,255,.12);
+      border-radius: 8px;
+      padding: 12px 14px;
+      margin-bottom: 18px;
+      font-size: 13px;
+      color: rgba(255,255,255,.75);
+      line-height: 1.6;
+      font-style: italic;
+    }
+    .voice-example strong {
+      display: block;
+      font-style: normal;
+      font-size: 11px;
+      text-transform: uppercase;
+      letter-spacing: .8px;
+      color: rgba(255,255,255,.4);
+      margin-bottom: 6px;
+      font-weight: 700;
+    }
+
+    /* record button */
+    .record-wrap {
+      display: flex;
+      align-items: center;
+      gap: 16px;
+      margin-bottom: 16px;
+    }
+    .btn-record {
+      display: flex; align-items: center; gap: 10px;
+      padding: 13px 22px;
+      background: var(--rec); color: #fff;
+      border: none; border-radius: 10px;
+      font-size: 15px; font-weight: 700;
+      cursor: pointer; font-family: inherit;
+      transition: background .15s, transform .1s;
+      flex-shrink: 0;
+    }
+    .btn-record:hover  { background: #B91C1C; }
+    .btn-record:active { transform: scale(.98); }
+    .btn-record.recording {
+      background: #374151;
+      animation: none;
+    }
+    .btn-record .dot {
+      width: 10px; height: 10px;
+      background: #fff; border-radius: 50%;
+      flex-shrink: 0;
+    }
+    .btn-record.recording .dot {
+      animation: blink .9s ease-in-out infinite;
+    }
+    @keyframes blink {
+      0%, 100% { opacity: 1; }
+      50%       { opacity: .2; }
+    }
+
+    .rec-status {
+      font-size: 13px;
+      color: rgba(255,255,255,.6);
+    }
+    .rec-status.live {
+      color: #86efac;
+      font-weight: 600;
+    }
+
+    /* transcript box */
+    .transcript-wrap { display: none; margin-bottom: 14px; }
+    .transcript-label {
+      font-size: 11px; font-weight: 700; color: rgba(255,255,255,.4);
+      text-transform: uppercase; letter-spacing: .8px; margin-bottom: 6px;
+    }
+    .transcript-box {
+      background: rgba(255,255,255,.05);
+      border: 1px solid rgba(255,255,255,.1);
+      border-radius: 8px;
+      padding: 12px 14px;
+      font-size: 14px;
+      color: rgba(255,255,255,.85);
+      min-height: 60px;
+      line-height: 1.6;
+      white-space: pre-wrap;
+    }
+    .transcript-interim { color: rgba(255,255,255,.4); }
+
+    /* parse button */
+    .btn-parse {
+      width: 100%;
+      padding: 13px;
+      background: #D4AF37; color: #0F172A;
+      border: none; border-radius: 9px;
+      font-size: 15px; font-weight: 700;
+      cursor: pointer; font-family: inherit;
+      transition: background .15s, transform .1s;
+      display: none;
+    }
+    .btn-parse:hover  { background: #C09B2A; }
+    .btn-parse:active { transform: scale(.99); }
+
+    /* parsing spinner inside voice card */
+    .parsing-state {
+      display: none;
+      align-items: center;
+      gap: 12px;
+      padding: 12px 0;
+    }
+    .mini-spinner {
+      width: 20px; height: 20px;
+      border: 2px solid rgba(255,255,255,.2);
+      border-top-color: #D4AF37;
+      border-radius: 50%;
+      animation: spin .7s linear infinite;
+      flex-shrink: 0;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+    .parsing-text { font-size: 14px; color: rgba(255,255,255,.7); }
+
+    /* fill notice */
+    .fill-notice {
+      display: none;
+      background: #ECFDF5; border: 1px solid #A7F3D0;
+      border-radius: 8px; padding: 10px 14px;
+      font-size: 13px; color: #065F46;
+      margin-bottom: 16px;
+    }
+
+    /* ── Error ───────────────────────────────────────────────────────────── */
+    .error-box {
+      background: #FEF2F2; border: 1px solid #FECACA;
+      border-radius: 10px; padding: 14px 16px;
+      color: var(--danger); margin-bottom: 16px;
+      font-size: 14px; display: none;
+    }
+
+    /* ── VAT explain (screen 2) ──────────────────────────────────────────── */
+    .vat-explain {
+      border-radius: 12px; padding: 18px 20px; margin-bottom: 20px;
+      display: flex; align-items: flex-start; gap: 14px;
+    }
+    .vat-explain.low     { background: #ECFDF5; border: 1px solid #A7F3D0; }
+    .vat-explain.high    { background: #FFFBEB; border: 1px solid #FDE68A; }
+    .vat-explain.verlegd { background: #F5F3FF; border: 1px solid #DDD6FE; }
+    .vat-icon  { font-size: 26px; line-height: 1; flex-shrink: 0; margin-top: 2px; }
+    .vat-rate  { font-size: 22px; font-weight: 800; letter-spacing: -.5px; line-height: 1.2; }
+    .vat-explain.low     .vat-rate { color: var(--success); }
+    .vat-explain.high    .vat-rate { color: var(--warning); }
+    .vat-explain.verlegd .vat-rate { color: var(--purple); }
+    .vat-reden { font-size: 14px; color: var(--muted); margin-top: 4px; line-height: 1.5; }
+
+    /* attestation warning */
+    .attest-box {
+      background: #FFFBEB; border: 1px solid #FDE68A;
+      border-radius: 10px; padding: 14px 16px;
+      margin-bottom: 20px; font-size: 13px; color: #92400E; line-height: 1.6;
+    }
+    .attest-box strong { font-weight: 700; display: block; margin-bottom: 4px; }
+
+    /* ── Invoice actions ─────────────────────────────────────────────────── */
+    .invoice-actions {
+      display: flex; gap: 12px; margin-bottom: 20px;
+      flex-wrap: wrap; align-items: center;
+    }
+
+    /* ── Invoice document ────────────────────────────────────────────────── */
+    .invoice-doc {
+      background: #fff; border-radius: 12px;
+      box-shadow: 0 4px 12px rgba(0,0,0,.1);
+    }
+    .invoice { padding: 44px 52px; font-size: 14px; }
+    @media (max-width: 560px) { .invoice { padding: 24px 20px; } }
+
+    .inv-head {
+      display: flex; justify-content: space-between;
+      align-items: flex-start; margin-bottom: 40px; gap: 20px;
+    }
+    @media (max-width: 500px) {
+      .inv-head { flex-direction: column; }
+      .inv-meta { text-align: left !important; }
+    }
+    .inv-company-name {
+      font-size: 20px; font-weight: 800;
+      color: var(--primary-dark); letter-spacing: -.4px;
+    }
+    .inv-company-details { font-size: 13px; color: var(--muted); line-height: 1.7; margin-top: 4px; }
+    .inv-meta { text-align: right; }
+    .inv-title { font-size: 30px; font-weight: 900; color: var(--primary); letter-spacing: -1px; line-height: 1; }
+    .inv-meta-rows { font-size: 13px; color: var(--muted); line-height: 1.8; margin-top: 6px; }
+    .inv-meta-rows strong { color: var(--text); }
+
+    .inv-parties { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 32px; }
+    @media (max-width: 500px) { .inv-parties { grid-template-columns: 1fr; } }
+
+    .party {
+      padding: 14px 16px; background: #F8FAFC;
+      border-radius: 8px; border: 1px solid var(--border);
+    }
+    .party-label {
+      font-size: 10px; font-weight: 700; color: var(--muted);
+      text-transform: uppercase; letter-spacing: 1px; margin-bottom: 6px;
+    }
+    .party-name { font-size: 15px; font-weight: 700; color: var(--text); }
+    .party-info { font-size: 13px; color: var(--muted); line-height: 1.7; margin-top: 3px; }
+
+    .inv-table { width: 100%; border-collapse: collapse; margin-bottom: 24px; }
+    .inv-table th {
+      font-size: 11px; font-weight: 700; color: var(--muted);
+      text-transform: uppercase; letter-spacing: .5px;
+      padding: 8px 10px; border-bottom: 2px solid var(--border); text-align: left;
+    }
+    .inv-table th.right { text-align: right; }
+    .inv-table td {
+      padding: 11px 10px; font-size: 14px;
+      border-bottom: 1px solid #F1F5F9; vertical-align: top;
+    }
+    .inv-table td.right { text-align: right; font-weight: 600; white-space: nowrap; }
+    .inv-table tr:last-child td { border-bottom: none; }
+
+    .inv-totals-wrap { display: flex; justify-content: flex-end; margin-bottom: 28px; }
+    .inv-totals { min-width: 260px; }
+    .tot-row {
+      display: flex; justify-content: space-between; align-items: center;
+      padding: 8px 0; font-size: 14px; border-bottom: 1px solid var(--border);
+    }
+    .tot-row:last-child { border-bottom: none; }
+    .tot-row .lbl { color: var(--muted); }
+    .tot-row .amt { font-weight: 600; }
+    .tot-row.grand { padding: 12px 0; border-top: 2px solid var(--text); border-bottom: none; }
+    .tot-row.grand .lbl { font-size: 15px; font-weight: 800; color: var(--text); }
+    .tot-row.grand .amt { font-size: 20px; font-weight: 800; color: var(--primary-dark); }
+
+    .inv-legal {
+      background: #F8FAFC; border: 1px solid var(--border);
+      border-radius: 7px; padding: 10px 14px;
+      font-size: 12px; color: var(--muted); margin-bottom: 20px; line-height: 1.6;
+    }
+    .inv-legal strong { color: var(--text); font-weight: 600; }
+
+    .inv-payment {
+      display: grid; grid-template-columns: 1fr 1fr;
+      gap: 16px; padding-top: 22px;
+      border-top: 1px solid var(--border); margin-bottom: 22px;
+    }
+    @media (max-width: 500px) { .inv-payment { grid-template-columns: 1fr; } }
+    .pay-label {
+      font-size: 10px; font-weight: 700; color: var(--muted);
+      text-transform: uppercase; letter-spacing: 1px; margin-bottom: 4px;
+    }
+    .pay-value { font-size: 14px; font-weight: 700; color: var(--text); }
+    .pay-iban  { font-family: 'Courier New', monospace; letter-spacing: .5px; }
+    .pay-ref   { font-size: 12px; color: var(--muted); margin-top: 2px; font-weight: 400; }
+
+    .inv-footer {
+      text-align: center; font-size: 11px; color: #94A3B8;
+      padding-top: 18px; border-top: 1px solid var(--border); line-height: 1.7;
+    }
+
+    .disclaimer {
+      font-size: 12px; color: var(--muted);
+      margin-top: 14px; text-align: center; padding: 0 8px;
+    }
+
+    /* ── Print ───────────────────────────────────────────────────────────── */
+    @media print {
+      body { background: #fff; }
+      .app-bar, .invoice-actions, .vat-explain,
+      .attest-box, .disclaimer, .no-print { display: none !important; }
+      .container  { padding: 0; max-width: none; }
+      .invoice-doc { box-shadow: none; border-radius: 0; }
+      .invoice    { padding: 15mm 18mm; }
+      .screen     { display: block !important; }
+      #screen1    { display: none !important; }
+      @page       { margin: 0; size: A4; }
+    }
+  </style>
+</head>
+<body>
+
+<div class="app-bar">
+  <div style="font-size:22px;">🔧</div>
+  <div>
+    <div class="app-bar-title">Factuur Generator</div>
+    <div class="app-bar-sub">Voor loodgieters · België · Automatische BTW-berekening</div>
+  </div>
+  <a href="herinneringen.html" style="font-size:13px;color:rgba(255,255,255,.7);text-decoration:none;padding:6px 12px;border:1px solid rgba(255,255,255,.25);border-radius:7px;">📋 Herinneringen</a>
+</div>
+
+<!-- ══════════════════════════════════════
+     SCREEN 1
+══════════════════════════════════════ -->
+<div id="screen1" class="screen active">
+  <div class="container">
+
+    <div id="errorBox" class="error-box"></div>
+    <div id="fillNotice" class="fill-notice">
+      ✅ Velden ingevuld vanuit uw opname. Controleer alles en pas aan waar nodig.
+    </div>
+
+    <!-- ── Company details (saved locally) ──────────────────────────────── -->
+    <div class="card">
+      <div class="card-head">
+        <div class="card-head-left">
+          <div class="card-head-icon">🏢</div>
+          <h2>Uw bedrijfsgegevens</h2>
+        </div>
+        <div style="display:flex;align-items:center;gap:10px;">
+          <span class="saved-badge" id="savedBadge">✓ Opgeslagen</span>
+          <button class="btn-sm" onclick="saveCompany()">Opslaan</button>
+        </div>
+      </div>
+      <div class="card-body">
+        <div class="grid">
+          <div class="field col-2">
+            <label>Bedrijfsnaam</label>
+            <input type="text" id="companyName" placeholder="bv. Loodgieters Janssen & Zonen" />
+          </div>
+          <div class="field">
+            <label>BTW-nummer</label>
+            <input type="text" id="vatNumber" placeholder="BE 0123.456.789" />
+          </div>
+          <div class="field">
+            <label>IBAN</label>
+            <input type="text" id="iban" placeholder="BE68 5390 0754 7034" />
+          </div>
+          <div class="field col-2">
+            <label>Adres (optioneel)</label>
+            <input type="text" id="companyAddress" placeholder="Keizerslaan 5, 1000 Brussel" />
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ── Voice recording ───────────────────────────────────────────────── -->
+    <div class="voice-card">
+      <div class="voice-card-head">
+        <h2>🎤 Spreek uw opdracht in</h2>
+        <p>Vertel in één opname alles over de klant en het werk. Claude vult daarna de velden in.</p>
+      </div>
+      <div class="voice-card-body">
+
+        <div class="voice-example">
+          <strong>Voorbeeld</strong>
+          "Klant is Familie Peeters, adres Kerkstraat 45 in Gent, privéklant, de woning is ouder dan tien jaar.
+          Ik heb drie uur gewerkt voor het vervangen van de kraan in de badkamer en het herstellen van de aansluitbuizen.
+          Materiaalkosten zijn 85 euro voor een nieuwe kraan en PVC-buizen."
+        </div>
+
+        <div class="record-wrap">
+          <button class="btn-record" id="recordBtn" onclick="toggleRecording()">
+            <span class="dot"></span>
+            <span id="recordLabel">Start opname</span>
+          </button>
+          <span class="rec-status" id="recStatus">Klik om te beginnen</span>
+        </div>
+
+        <div class="transcript-wrap" id="transcriptWrap">
+          <div class="transcript-label">Opname</div>
+          <div class="transcript-box" id="transcriptBox"></div>
+        </div>
+
+        <div class="parsing-state" id="parsingState">
+          <div class="mini-spinner"></div>
+          <span class="parsing-text">Velden worden ingevuld door Claude…</span>
+        </div>
+
+        <button class="btn-parse" id="parseBtn" onclick="parseAndFill()">
+          ✦ &nbsp;Velden invullen
+        </button>
+
+      </div>
+    </div>
+
+    <!-- ── Client details ────────────────────────────────────────────────── -->
+    <div class="card">
+      <div class="card-head">
+        <div class="card-head-left">
+          <div class="card-head-icon">👤</div>
+          <h2>Klantgegevens</h2>
+        </div>
+      </div>
+      <div class="card-body">
+        <div class="grid">
+          <div class="field col-2">
+            <label>Naam klant of bedrijf</label>
+            <input type="text" id="clientName" placeholder="bv. Familie Peeters of Renovatie NV" />
+          </div>
+          <div class="field col-2">
+            <label>Adres klant</label>
+            <input type="text" id="clientAddress" placeholder="Stationsstraat 12, 2000 Antwerpen" />
+          </div>
+          <div class="field col-2" id="clientVatRow" style="display:none;">
+            <label>BTW-nummer klant</label>
+            <input type="text" id="clientVat" placeholder="BE 0987.654.321" />
+          </div>
+        </div>
+        <div style="margin-top:16px; padding-top:16px; border-top:1px solid var(--border);">
+          <div class="toggle-row" style="border-bottom:none;">
+            <div>
+              <div class="toggle-label">B2B klant (bedrijf)</div>
+              <div class="toggle-hint">BTW wordt verlegd — klant voldoet zelf (art. 20 KB nr. 1)</div>
+            </div>
+            <label class="toggle-switch">
+              <input type="checkbox" id="isB2B" onchange="onB2BToggle()" />
+              <span class="slider"></span>
+            </label>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ── Job details ────────────────────────────────────────────────────── -->
+    <div class="card">
+      <div class="card-head">
+        <div class="card-head-left">
+          <div class="card-head-icon">📋</div>
+          <h2>Opdrachtgegevens</h2>
+        </div>
+      </div>
+      <div class="card-body">
+        <div style="margin-bottom:20px;">
+          <div class="toggle-row" style="border-bottom:none;">
+            <div>
+              <div class="toggle-label">Gebouw ouder dan 10 jaar</div>
+              <div class="toggle-hint">6% BTW voor renovatie privéwoning &gt; 10 jaar (KB nr. 20, tabel A)</div>
+            </div>
+            <label class="toggle-switch">
+              <input type="checkbox" id="buildingOld" />
+              <span class="slider"></span>
+            </label>
+          </div>
+        </div>
+        <div class="grid">
+          <div class="field col-2">
+            <label>Beschrijving werkzaamheden</label>
+            <textarea id="workDescription" placeholder="bv. Vervanging lekkende kraan in badkamer, nieuwe aansluitbuizen gelegd…"></textarea>
+          </div>
+          <div class="field">
+            <label>Uren gewerkt</label>
+            <input type="number" id="hours" placeholder="3" min="0" step="0.5" />
+          </div>
+          <div class="field">
+            <label>Uurtarief (€)</label>
+            <input type="number" id="hourlyRate" value="55" min="0" step="1" />
+          </div>
+          <div class="field">
+            <label>Materiaalkosten (€)</label>
+            <input type="number" id="materialsCost" placeholder="0" min="0" step="0.01" />
+          </div>
+          <div class="field">
+            <label>Materialen omschrijving</label>
+            <input type="text" id="materialsDesc" placeholder="bv. kraan, PVC buizen, koppelstukken" />
+          </div>
+          <div class="field">
+            <label>Factuurnummer</label>
+            <input type="text" id="invoiceNumber" />
+          </div>
+          <div class="field">
+            <label>Factuurdatum</label>
+            <input type="text" id="invoiceDate" />
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <button class="btn-primary" onclick="generateInvoice()">Genereer factuur</button>
+
+    <p class="disclaimer">
+      ⚠️ Dekt de drie standaard btw-scenario's voor loodgieters in België.
+      Raadpleeg uw boekhouder voor bijzondere gevallen (sociale woningen, gemengd gebruik).
+    </p>
+
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════
+     SCREEN 2 — INVOICE
+══════════════════════════════════════ -->
+<div id="screen2" class="screen">
+  <div class="container">
+
+    <div class="invoice-actions no-print">
+      <button class="btn-outline" onclick="newInvoice()">← Nieuwe factuur</button>
+      <button class="btn-print"   onclick="window.print()">🖨️ &nbsp;Afdrukken / PDF opslaan</button>
+    </div>
+
+    <div id="vatExplain"></div>
+    <div id="attestBox"></div>
+
+    <div class="invoice-doc">
+      <div class="invoice" id="invoiceBody"></div>
+    </div>
+
+    <p class="disclaimer no-print">
+      Controleer altijd de gegevens vóór verzending.
+      Bij 6%-tarief moet de klant een schriftelijke verklaring hebben ondertekend.
+    </p>
+
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════
+     JAVASCRIPT
+══════════════════════════════════════ -->
+<script>
+// ── Invoice counter ───────────────────────────────────────────────────────────
+function peekInvoiceNumber() {
+  const yr = new Date().getFullYear();
+  return yr + '-' + String(parseInt(localStorage.getItem('inv_' + yr) || '0') + 1).padStart(4, '0');
+}
+function bumpCounter() {
+  const yr = new Date().getFullYear();
+  localStorage.setItem('inv_' + yr, parseInt(localStorage.getItem('inv_' + yr) || '0') + 1);
+}
+
+// ── Company details persistence ───────────────────────────────────────────────
+function saveCompany() {
+  localStorage.setItem('company', JSON.stringify({
+    companyName:    document.getElementById('companyName').value,
+    vatNumber:      document.getElementById('vatNumber').value,
+    iban:           document.getElementById('iban').value,
+    companyAddress: document.getElementById('companyAddress').value,
+  }));
+  const badge = document.getElementById('savedBadge');
+  badge.classList.add('show');
+  setTimeout(() => badge.classList.remove('show'), 2000);
+}
+
+function loadCompany() {
+  const d = JSON.parse(localStorage.getItem('company') || 'null');
+  if (!d) return;
+  document.getElementById('companyName').value    = d.companyName    || '';
+  document.getElementById('vatNumber').value      = d.vatNumber      || '';
+  document.getElementById('iban').value           = d.iban           || '';
+  document.getElementById('companyAddress').value = d.companyAddress || '';
+}
+
+// ── Init ──────────────────────────────────────────────────────────────────────
+document.addEventListener('DOMContentLoaded', () => {
+  loadCompany();
+  document.getElementById('invoiceNumber').value = peekInvoiceNumber();
+  document.getElementById('invoiceDate').value   = todayBE();
+});
+
+function todayBE() {
+  return new Date().toLocaleDateString('nl-BE', { day:'2-digit', month:'2-digit', year:'numeric' });
+}
+
+// ── Toggles ───────────────────────────────────────────────────────────────────
+function onB2BToggle() {
+  document.getElementById('clientVatRow').style.display =
+    document.getElementById('isB2B').checked ? 'block' : 'none';
+}
+
+// ── Screen ────────────────────────────────────────────────────────────────────
+function show(id) {
+  ['screen1','screen2'].forEach(s =>
+    document.getElementById(s).classList.toggle('active', s === id));
+  window.scrollTo(0, 0);
+}
+
+// ── Error helper ──────────────────────────────────────────────────────────────
+function showError(msg) {
+  const b = document.getElementById('errorBox');
+  b.textContent = msg;
+  b.style.display = 'block';
+  b.scrollIntoView({ behavior:'smooth', block:'center' });
+}
+function clearError() {
+  document.getElementById('errorBox').style.display = 'none';
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// VOICE RECORDING
+// Uses Web Speech API for transcription (free, Chrome).
+// Claude is called only to parse the transcript into form fields.
+// VAT is always determined by deterministic JS rules — not AI.
+// ─────────────────────────────────────────────────────────────────────────────
+let isRecording    = false;
+let recognition    = null;
+let finalTranscript = '';
+let interimText     = '';
+
+function toggleRecording() {
+  if (isRecording) stopRecording();
+  else             startRecording();
+}
+
+function startRecording() {
+  const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+  if (!SR) {
+    showError('Spraakherkenning vereist Chrome. Gebruik Chrome of vul de velden manueel in.');
+    return;
+  }
+
+  clearError();
+  finalTranscript = '';
+  interimText     = '';
+
+  recognition               = new SR();
+  recognition.lang          = 'nl-BE';
+  recognition.continuous    = true;
+  recognition.interimResults = true;
+
+  recognition.onresult = e => {
+    finalTranscript = '';
+    interimText     = '';
+    for (let i = 0; i < e.results.length; i++) {
+      if (e.results[i].isFinal) finalTranscript += e.results[i][0].transcript + ' ';
+      else                       interimText     += e.results[i][0].transcript;
+    }
+    renderTranscript();
+  };
+
+  // Restart on pause so long recordings aren't cut off.
+  // If restart fails, the recognition died — finalize what we have.
+  recognition.onend = () => {
+    if (!isRecording) return;
+    try {
+      recognition.start();
+    } catch(_) {
+      // Can't restart — treat remaining interim as final and show the button
+      if (interimText.trim()) {
+        finalTranscript = (finalTranscript + ' ' + interimText).trim();
+        interimText = '';
+        renderTranscript();
+      }
+      isRecording = false;
+      setRecordingUI(false);
+      document.getElementById('parseBtn').style.display =
+        finalTranscript.trim() ? 'block' : 'none';
+    }
+  };
+
+  recognition.onerror = e => {
+    if (e.error === 'no-speech') return; // ignore silence
+    stopRecording();
+    if (e.error !== 'aborted') // aborted = we stopped it intentionally
+      showError('Spraakfout: ' + e.error + '. Probeer opnieuw.');
+  };
+
+  recognition.start();
+  isRecording = true;
+  setRecordingUI(true);
+
+  document.getElementById('transcriptWrap').style.display = 'block';
+  document.getElementById('parseBtn').style.display       = 'none';
+  document.getElementById('transcriptBox').innerHTML      = '';
+}
+
+function stopRecording() {
+  isRecording = false;
+  if (recognition) { try { recognition.stop(); } catch(_) {} }
+
+  // The Web Speech API often leaves the last utterance as interim (not finalized).
+  // Merge it in so it isn't lost.
+  if (interimText.trim()) {
+    finalTranscript = (finalTranscript + ' ' + interimText).trim();
+    interimText = '';
+  }
+
+  setRecordingUI(false);
+  renderTranscript();
+  document.getElementById('parseBtn').style.display =
+    finalTranscript.trim() ? 'block' : 'none';
+}
+
+function setRecordingUI(on) {
+  const btn = document.getElementById('recordBtn');
+  btn.classList.toggle('recording', on);
+  document.getElementById('recordLabel').textContent = on ? 'Stop opname' : 'Start opname';
+  document.getElementById('recStatus').textContent   = on ? 'Opname loopt…' : (finalTranscript ? 'Opname gestopt' : 'Klik om te beginnen');
+  document.getElementById('recStatus').classList.toggle('live', on);
+}
+
+function renderTranscript() {
+  const box = document.getElementById('transcriptBox');
+  box.innerHTML =
+    (finalTranscript || '') +
+    (interimText ? `<span class="transcript-interim">${interimText}</span>` : '');
+}
+
+// ── Parse transcript via server proxy ─────────────────────────────────────────
+async function parseAndFill() {
+  const transcript = (finalTranscript + ' ' + interimText).trim();
+  if (!transcript) return;
+  finalTranscript = transcript;
+  interimText = '';
+
+  document.getElementById('parseBtn').style.display     = 'none';
+  document.getElementById('parsingState').style.display = 'flex';
+
+  try {
+    const res = await fetch('/api/parse', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ transcript, year: new Date().getFullYear() }),
+    });
+
+    if (!res.ok) throw new Error('Serverfout ' + res.status);
+
+    const data = await res.json();
+    let raw = data.content[0].text.trim().replace(/^```json?\n?/, '').replace(/\n?```$/, '');
+    const parsed = JSON.parse(raw);
+
+    fillFormFromParsed(parsed);
+    document.getElementById('fillNotice').style.display = 'block';
+
+  } catch(e) {
+    showError('Fout bij verwerking: ' + e.message);
+    document.getElementById('parseBtn').style.display = 'block';
+  } finally {
+    document.getElementById('parsingState').style.display = 'none';
+  }
+}
+
+function fillFormFromParsed(p) {
+  const set = (id, val) => {
+    if (val === null || val === undefined) return;
+    const el = document.getElementById(id);
+    if (!el) return;
+    if (el.type === 'checkbox') {
+      el.checked = Boolean(val);
+    } else {
+      el.value = val;
+    }
+  };
+
+  set('clientName',      p.clientName);
+  set('clientAddress',   p.clientAddress);
+  set('clientVat',       p.clientVat);
+  set('workDescription', p.workDescription);
+  set('hours',           p.hours);
+  set('materialsDesc',   p.materialsDesc);
+
+  if (p.materialsCost !== null && p.materialsCost !== undefined)
+    set('materialsCost', p.materialsCost);
+
+  if (p.hourlyRate !== null && p.hourlyRate !== undefined)
+    set('hourlyRate', p.hourlyRate);
+
+  if (p.isB2B !== null) {
+    set('isB2B', p.isB2B);
+    onB2BToggle();
+  }
+
+  if (p.buildingOld !== null)
+    set('buildingOld', p.buildingOld);
+}
+
+// ── Validation ────────────────────────────────────────────────────────────────
+function validate() {
+  const required = [
+    ['companyName',     'Bedrijfsnaam'],
+    ['vatNumber',       'BTW-nummer'],
+    ['iban',            'IBAN'],
+    ['clientName',      'Naam klant'],
+    ['clientAddress',   'Adres klant'],
+    ['workDescription', 'Beschrijving werkzaamheden'],
+    ['hours',           'Uren gewerkt'],
+  ];
+  for (const [id, lbl] of required) {
+    if (!document.getElementById(id).value.trim())
+      return `Veld "${lbl}" is verplicht.`;
+  }
+  if (parseFloat(document.getElementById('hours').value) <= 0)
+    return 'Aantal uren moet groter zijn dan 0.';
+  return null;
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// BELGIAN VAT LOGIC — fully deterministic, no AI involved
+// Rules:
+//   B2B  → verlegd, art. 20 KB nr. 1 (werk in onroerende staat)
+//   B2C + gebouw ≥ 10 jaar → 6%, KB nr. 20 tabel A rubriek XXXI
+//   B2C + gebouw < 10 jaar → 21% standaard
+// ─────────────────────────────────────────────────────────────────────────────
+function determineVAT(isB2B, buildingOld) {
+  if (isB2B) {
+    return {
+      type: 'verlegd', display: 'BTW verlegd', percentage: 0,
+      reden: 'B2B klant (medecontractant) — de klant is btw-plichtig en voldoet de btw zelf.',
+      legalMention: 'Medecontractant — btw verlegd. Art. 20 KB nr. 1 bij BTW.',
+      needsAttest: false,
+    };
+  }
+  if (buildingOld) {
+    return {
+      type: 'low', display: '6%', percentage: 6,
+      reden: 'Renovatiewerk aan privéwoning ouder dan 10 jaar — verminderd tarief van toepassing.',
+      legalMention: 'Btw-tarief 6% van toepassing overeenkomstig KB nr. 20, tabel A, rubriek XXXI. De klant heeft verklaard dat de woning meer dan 10 jaar geleden voor het eerst in gebruik werd genomen en uitsluitend als privéwoning wordt gebruikt.',
+      needsAttest: true,
+    };
+  }
+  return {
+    type: 'high', display: '21%', percentage: 21,
+    reden: 'Nieuwbouw of gebouw jonger dan 10 jaar — standaard btw-tarief van 21%.',
+    legalMention: null,
+    needsAttest: false,
+  };
+}
+
+function buildInvoiceData(fd) {
+  const vat     = determineVAT(fd.isB2B, fd.buildingOld);
+  const labor   = parseFloat(fd.hours) * parseFloat(fd.hourlyRate);
+  const matsAmt = parseFloat(fd.materialsCost) || 0;
+
+  const lijnposten = [{
+    omschrijving: `Arbeidsloon: ${fd.hours} uur × €${fd.hourlyRate}/u`,
+    bedrag: labor,
+  }];
+  if (matsAmt > 0) {
+    lijnposten.push({
+      omschrijving: fd.materialsDesc || 'Materialen',
+      bedrag: matsAmt,
+    });
+  }
+
+  const subtotaal  = lijnposten.reduce((s, li) => s + li.bedrag, 0);
+  const btw_bedrag = vat.percentage > 0 ? subtotaal * vat.percentage / 100 : 0;
+
+  return { ...vat, lijnposten, subtotaal, btw_bedrag, totaal: subtotaal + btw_bedrag, betaaltermijn: '30 dagen' };
+}
+
+// ── Generate (instant, no API) ────────────────────────────────────────────────
+function generateInvoice() {
+  clearError();
+  const err = validate();
+  if (err) { showError(err); return; }
+
+  const fd = {
+    companyName:    document.getElementById('companyName').value.trim(),
+    vatNumber:      document.getElementById('vatNumber').value.trim(),
+    iban:           document.getElementById('iban').value.trim(),
+    companyAddress: document.getElementById('companyAddress').value.trim(),
+    clientName:     document.getElementById('clientName').value.trim(),
+    clientAddress:  document.getElementById('clientAddress').value.trim(),
+    clientVat:      document.getElementById('clientVat').value.trim(),
+    isB2B:          document.getElementById('isB2B').checked,
+    buildingOld:    document.getElementById('buildingOld').checked,
+    workDescription:document.getElementById('workDescription').value.trim(),
+    hours:          document.getElementById('hours').value.trim(),
+    hourlyRate:     document.getElementById('hourlyRate').value.trim(),
+    materialsCost:  document.getElementById('materialsCost').value.trim(),
+    materialsDesc:  document.getElementById('materialsDesc').value.trim(),
+    invoiceNumber:  document.getElementById('invoiceNumber').value.trim(),
+    invoiceDate:    document.getElementById('invoiceDate').value.trim(),
+  };
+
+  bumpCounter();
+  renderInvoice(fd, buildInvoiceData(fd));
+  show('screen2');
+}
+
+function newInvoice() {
+  document.getElementById('invoiceNumber').value        = peekInvoiceNumber();
+  document.getElementById('invoiceDate').value          = todayBE();
+  document.getElementById('fillNotice').style.display   = 'none';
+  document.getElementById('transcriptWrap').style.display = 'none';
+  document.getElementById('parseBtn').style.display     = 'none';
+  finalTranscript = '';
+  show('screen1');
+}
+
+// ── Helpers ───────────────────────────────────────────────────────────────────
+function eur(n) {
+  return '€ ' + parseFloat(n).toLocaleString('nl-BE', {
+    minimumFractionDigits: 2, maximumFractionDigits: 2,
+  });
+}
+
+function dueDate(dateStr, term) {
+  try {
+    const p = dateStr.split('/');
+    if (p.length === 3) {
+      const d = new Date(p[2], p[1] - 1, p[0]);
+      d.setDate(d.getDate() + (parseInt(term) || 30));
+      return d.toLocaleDateString('nl-BE', { day:'2-digit', month:'2-digit', year:'numeric' });
+    }
+  } catch(_) {}
+  return term + ' na factuurdatum';
+}
+
+// ── Render invoice ────────────────────────────────────────────────────────────
+function renderInvoice(fd, inv) {
+  const icon = inv.type === 'verlegd' ? '🔄' : inv.type === 'low' ? '✅' : '⚠️';
+  document.getElementById('vatExplain').innerHTML = `
+    <div class="vat-explain ${inv.type}">
+      <div class="vat-icon">${icon}</div>
+      <div>
+        <div class="vat-rate">${inv.display}</div>
+        <div class="vat-reden">${inv.reden}</div>
+      </div>
+    </div>`;
+
+  document.getElementById('attestBox').innerHTML = inv.needsAttest ? `
+    <div class="attest-box">
+      <strong>⚠️ Verplichte klantverklaring voor 6% BTW</strong>
+      De klant moet een schriftelijke verklaring ondertekend hebben: (1) de woning is meer dan 10 jaar geleden voor het eerst in gebruik genomen, en (2) wordt uitsluitend als privéwoning gebruikt.
+      Zonder dit attest is het 6%-tarief niet rechtsgeldig.
+    </div>` : '';
+
+  const rows = inv.lijnposten.map(li => `
+    <tr>
+      <td>${li.omschrijving}</td>
+      <td class="right">${eur(li.bedrag)}</td>
+    </tr>`).join('');
+
+  let totals = `
+    <div class="tot-row">
+      <span class="lbl">Subtotaal (excl. BTW)</span>
+      <span class="amt">${eur(inv.subtotaal)}</span>
+    </div>`;
+
+  totals += inv.type === 'verlegd'
+    ? `<div class="tot-row"><span class="lbl">BTW (verlegd)</span><span class="amt" style="color:var(--purple);">€ 0,00</span></div>`
+    : `<div class="tot-row"><span class="lbl">BTW (${inv.display})</span><span class="amt">${eur(inv.btw_bedrag)}</span></div>`;
+
+  totals += `
+    <div class="tot-row grand">
+      <span class="lbl">TOTAAL</span>
+      <span class="amt">${eur(inv.totaal)}</span>
+    </div>`;
+
+  const legalHTML = inv.legalMention
+    ? `<div class="inv-legal"><strong>Wettelijke vermelding:</strong> ${inv.legalMention}</div>` : '';
+
+  const clientVatLine = fd.isB2B && fd.clientVat ? `<br>BTW: ${fd.clientVat}` : '';
+  const coAddrLine    = fd.companyAddress ? `<br>${fd.companyAddress}` : '';
+
+  document.getElementById('invoiceBody').innerHTML = `
+    <div class="inv-head">
+      <div>
+        <div class="inv-company-name">${fd.companyName}</div>
+        <div class="inv-company-details">BTW: ${fd.vatNumber}${coAddrLine}</div>
+      </div>
+      <div class="inv-meta">
+        <div class="inv-title">FACTUUR</div>
+        <div class="inv-meta-rows">
+          Nr:&nbsp;<strong>${fd.invoiceNumber}</strong><br>
+          Datum:&nbsp;${fd.invoiceDate}<br>
+          Betalingstermijn:&nbsp;${inv.betaaltermijn}
+        </div>
+      </div>
+    </div>
+
+    <div class="inv-parties">
+      <div class="party">
+        <div class="party-label">Leverancier</div>
+        <div class="party-name">${fd.companyName}</div>
+        <div class="party-info">BTW: ${fd.vatNumber}${coAddrLine}</div>
+      </div>
+      <div class="party">
+        <div class="party-label">Klant</div>
+        <div class="party-name">${fd.clientName}</div>
+        <div class="party-info">${fd.clientAddress}${clientVatLine}</div>
+      </div>
+    </div>
+
+    <table class="inv-table">
+      <thead>
+        <tr><th>Omschrijving</th><th class="right">Bedrag</th></tr>
+      </thead>
+      <tbody>${rows}</tbody>
+    </table>
+
+    <div class="inv-totals-wrap">
+      <div class="inv-totals">${totals}</div>
+    </div>
+
+    ${legalHTML}
+
+    <div class="inv-payment">
+      <div>
+        <div class="pay-label">Betaling via</div>
+        <div class="pay-value pay-iban">${fd.iban}</div>
+        <div class="pay-ref">Mededeling: ${fd.invoiceNumber}</div>
+      </div>
+      <div>
+        <div class="pay-label">Vervaldatum</div>
+        <div class="pay-value">${dueDate(fd.invoiceDate, inv.betaaltermijn)}</div>
+      </div>
+    </div>
+
+    <div class="inv-footer">
+      ${fd.companyName}&nbsp;·&nbsp;BTW ${fd.vatNumber}&nbsp;·&nbsp;${fd.iban}
+      ${fd.companyAddress ? '<br>' + fd.companyAddress : ''}
+    </div>`;
+}
+</script>
+</body>
+</html>
