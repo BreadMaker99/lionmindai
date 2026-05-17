@@ -40,6 +40,9 @@ jobs:
             exit 0
           fi
 
+          # Zorg dat de .vercel map bestaat
+          mkdir -p factuur-app/.vercel
+
           SUCCESS=0
           FAILED=0
 
@@ -47,10 +50,10 @@ jobs:
             echo ""
             echo "▶ Deploying: ${PROJECT_NAME}"
 
-            # Schrijf tijdelijke project link
-            cat > factuur-app/.vercel/project.json <<EOF
-          {"projectId":"${PROJECT_ID}","orgId":"${VERCEL_ORG_ID}","projectName":"${PROJECT_NAME}"}
-          EOF
+            # Schrijf project link zonder heredoc (vermijdt insprong-problemen)
+            printf '{"projectId":"%s","orgId":"%s","projectName":"%s"}' \
+              "${PROJECT_ID}" "${VERCEL_ORG_ID}" "${PROJECT_NAME}" \
+              > factuur-app/.vercel/project.json
 
             if vercel --prod --yes --cwd factuur-app --token "${VERCEL_TOKEN}" 2>&1; then
               echo "  ✓ ${PROJECT_NAME} succesvol gedeployd"
