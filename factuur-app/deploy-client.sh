@@ -34,26 +34,27 @@ ORIGINAL_PROJECT_JSON=$(cat "$PROJECT_JSON")
 echo -e "${YELLOW}Vul de klantgegevens in:${NC}"
 echo ""
 
-read -rp "  Klantnaam slug (bv. janssen-loodgieters): " CLIENT_SLUG
+# Lees alle input van de terminal (/dev/tty) zodat pipes of subprocessen stdin niet opslokken
+read -rp "  Klantnaam slug (bv. janssen-loodgieters): " CLIENT_SLUG </dev/tty
 CLIENT_SLUG=$(echo "$CLIENT_SLUG" | tr '[:upper:]' '[:lower:]' | tr ' ' '-')
 PROJECT_NAME="factuur-${CLIENT_SLUG}"
 
-read -rp "  Bedrijfsnaam: " COMPANY_NAME
-read -rp "  BTW-nummer (bv. BE 0123.456.789): " COMPANY_VAT
-read -rp "  IBAN: " COMPANY_IBAN
-read -rp "  Adres: " COMPANY_ADDRESS
-read -rp "  E-mail (optioneel, enter om over te slaan): " COMPANY_EMAIL
-read -rp "  Telefoon (optioneel, enter om over te slaan): " COMPANY_PHONE
-read -rp "  Eigen domein (bv. factuur.klant.be) of enter voor geen: " CUSTOM_DOMAIN
+read -rp "  Bedrijfsnaam: "                                          COMPANY_NAME    </dev/tty
+read -rp "  BTW-nummer (bv. BE 0123.456.789): "                     COMPANY_VAT     </dev/tty
+read -rp "  IBAN: "                                                  COMPANY_IBAN    </dev/tty
+read -rp "  Adres: "                                                 COMPANY_ADDRESS </dev/tty
+read -rp "  E-mail (optioneel, enter om over te slaan): "           COMPANY_EMAIL   </dev/tty
+read -rp "  Telefoon (optioneel, enter om over te slaan): "         COMPANY_PHONE   </dev/tty
+read -rp "  Eigen domein (bv. factuur.klant.be) of enter voor geen: " CUSTOM_DOMAIN </dev/tty
 
-# Gebruik de Anthropic key van het huidige project via tijdelijk .env bestand
+# Haal Anthropic key op van huidig project (stdin veilig via /dev/null)
 TMPENV=$(mktemp)
-vercel env pull --yes "$TMPENV" 2>/dev/null || true
+vercel env pull --yes "$TMPENV" </dev/null 2>/dev/null || true
 ANTHROPIC_KEY=$(grep '^ANTHROPIC_API_KEY=' "$TMPENV" 2>/dev/null | cut -d= -f2 | tr -d '"' || echo "")
 rm -f "$TMPENV"
 
 if [ -z "$ANTHROPIC_KEY" ]; then
-  read -rsp "  Anthropic API key (niet zichtbaar): " ANTHROPIC_KEY
+  read -rsp "  Anthropic API key (niet zichtbaar): " ANTHROPIC_KEY </dev/tty
   echo ""
 fi
 
@@ -66,7 +67,7 @@ echo -e "  IBAN:     ${GREEN}${COMPANY_IBAN}${NC}"
 [ -n "$CUSTOM_DOMAIN" ] && echo -e "  Domein:   ${GREEN}${CUSTOM_DOMAIN}${NC}"
 echo -e "${YELLOW}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}"
 echo ""
-read -rp "Correct? Doorgaan? (j/n): " CONFIRM
+read -rp "Correct? Doorgaan? (j/n): " CONFIRM </dev/tty
 [ "$CONFIRM" != "j" ] && echo "Geannuleerd." && exit 0
 
 # ── 3. Vercel project aanmaken ─────────────────────────────────────────────────
