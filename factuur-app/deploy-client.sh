@@ -28,6 +28,7 @@ if [ ! -f "$PROJECT_JSON" ]; then
 fi
 
 ORG_ID=$(python3 -c "import json; print(json.load(open('${PROJECT_JSON}'))['orgId'])")
+ORIGINAL_PROJECT_JSON=$(cat "$PROJECT_JSON")
 
 # ── 2. Klantgegevens invoeren ──────────────────────────────────────────────────
 echo -e "${YELLOW}Vul de klantgegevens in:${NC}"
@@ -80,50 +81,33 @@ if [ -z "$PROJECT_ID" ]; then
   exit 1
 fi
 
-# ── 4. Tijdelijk linken aan nieuw project ──────────────────────────────────────
+# Herstel originele link altijd, ook bij fouten
+restore_original() { echo "$ORIGINAL_PROJECT_JSON" > "$PROJECT_JSON"; }
+trap restore_original EXIT
+
+# ── 4. Deployen naar nieuw project ────────────────────────────────────────────
 echo -e "${BLUE}[2/4] Deployen naar ${PROJECT_NAME}${NC}"
 
-cp "$PROJECT_JSON" "${PROJECT_JSON}.backup"
-cat > "$PROJECT_JSON" <<EOF
-{"projectId":"${PROJECT_ID}","orgId":"${ORG_ID}","projectName":"${PROJECT_NAME}"}
-EOF
+printf '{"projectId":"%s","orgId":"%s","projectName":"%s"}' \
+  "${PROJECT_ID}" "${ORG_ID}" "${PROJECT_NAME}" > "$PROJECT_JSON"
 
-# Deploy
 vercel --prod --yes
-
-# Herstel originele link
-cp "${PROJECT_JSON}.backup" "$PROJECT_JSON"
-rm "${PROJECT_JSON}.backup"
 
 # ── 5. Environment variables instellen ────────────────────────────────────────
 echo ""
 echo -e "${BLUE}[3/4] Environment variables instellen${NC}"
 
-# Tijdelijk linken voor env vars
-cp "$PROJECT_JSON" "${PROJECT_JSON}.backup"
-cat > "$PROJECT_JSON" <<EOF
-{"projectId":"${PROJECT_ID}","orgId":"${ORG_ID}","projectName":"${PROJECT_NAME}"}
-EOF
-
-vercel env add COMPANY_NAME    production --value "$COMPANY_NAME"    --yes --force
-vercel env add COMPANY_VAT     production --value "$COMPANY_VAT"     --yes --force
-vercel env add COMPANY_IBAN    production --value "$COMPANY_IBAN"    --yes --force
-vercel env add COMPANY_ADDRESS production --value "$COMPANY_ADDRESS" --yes --force
-vercel env add ANTHROPIC_API_KEY production --value "$ANTHROPIC_KEY" --yes --force
+vercel env add COMPANY_NAME     production --value "$COMPANY_NAME"    --yes --force
+vercel env add COMPANY_VAT      production --value "$COMPANY_VAT"     --yes --force
+vercel env add COMPANY_IBAN     production --value "$COMPANY_IBAN"    --yes --force
+vercel env add COMPANY_ADDRESS  production --value "$COMPANY_ADDRESS" --yes --force
+vercel env add ANTHROPIC_API_KEY production --value "$ANTHROPIC_KEY"  --yes --force
 [ -n "$COMPANY_EMAIL" ] && vercel env add COMPANY_EMAIL production --value "$COMPANY_EMAIL" --yes --force
 [ -n "$COMPANY_PHONE" ] && vercel env add COMPANY_PHONE production --value "$COMPANY_PHONE" --yes --force
 
-# Herstel originele link
-cp "${PROJECT_JSON}.backup" "$PROJECT_JSON"
-rm "${PROJECT_JSON}.backup"
-
 # Herdeployeer met env vars actief
-cat > "$PROJECT_JSON" <<EOF
-{"projectId":"${PROJECT_ID}","orgId":"${ORG_ID}","projectName":"${PROJECT_NAME}"}
-EOF
+echo -e "${BLUE}    Herdeployeer met env vars...${NC}"
 vercel --prod --yes
-cp "${PROJECT_JSON}.backup" "$PROJECT_JSON" 2>/dev/null || true
-rm -f "${PROJECT_JSON}.backup"
 
 # ── 6. Domein koppelen ────────────────────────────────────────────────────────
 if [ -n "$CUSTOM_DOMAIN" ]; then
