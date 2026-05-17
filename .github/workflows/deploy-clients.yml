@@ -1,0 +1,71 @@
+name: Deploy alle klanten
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'factuur-app/**'
+
+jobs:
+  deploy:
+    name: Herdeployeer alle factuur-klanten
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Installeer Vercel CLI
+        run: npm install -g vercel@latest
+
+      - name: Haal alle factuur-projecten op en deploy
+        env:
+          VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
+          VERCEL_ORG_ID: team_IwFZItsdchNaMkx1KZWshT5Z
+        run: |
+          echo "Ophalen van alle factuur-projecten..."
+
+          PROJECTS=$(curl -sf \
+            "https://api.vercel.com/v9/projects?teamId=${VERCEL_ORG_ID}&limit=100" \
+            -H "Authorization: Bearer ${VERCEL_TOKEN}" | \
+            python3 -c "
+          import json, sys
+          data = json.load(sys.stdin)
+          for p in data.get('projects', []):
+              if p['name'].startswith('factuur-'):
+                  print(p['id'] + '|' + p['name'])
+          ")
+
+          if [ -z "$PROJECTS" ]; then
+            echo "Geen factuur-projecten gevonden."
+            exit 0
+          fi
+
+          SUCCESS=0
+          FAILED=0
+
+          while IFS='|' read -r PROJECT_ID PROJECT_NAME; do
+            echo ""
+            echo "▶ Deploying: ${PROJECT_NAME}"
+
+            # Schrijf tijdelijke project link
+            cat > factuur-app/.vercel/project.json <<EOF
+          {"projectId":"${PROJECT_ID}","orgId":"${VERCEL_ORG_ID}","projectName":"${PROJECT_NAME}"}
+          EOF
+
+            if vercel --prod --yes --cwd factuur-app --token "${VERCEL_TOKEN}" 2>&1; then
+              echo "  ✓ ${PROJECT_NAME} succesvol gedeployd"
+              SUCCESS=$((SUCCESS + 1))
+            else
+              echo "  ❌ ${PROJECT_NAME} mislukt"
+              FAILED=$((FAILED + 1))
+            fi
+
+          done <<< "$PROJECTS"
+
+          echo ""
+          echo "══════════════════════════════════"
+          echo "  ✓ Succesvol: ${SUCCESS}"
+          [ "$FAILED" -gt 0 ] && echo "  ❌ Mislukt:   ${FAILED}"
+          echo "══════════════════════════════════"
+
+          [ "$FAILED" -gt 0 ] && exit 1 || exit 0
