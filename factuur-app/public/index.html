@@ -509,7 +509,8 @@
         </div>
         <div style="display:flex;align-items:center;gap:10px;">
           <span class="saved-badge" id="savedBadge">✓ Opgeslagen</span>
-          <button class="btn-sm" onclick="saveCompany()">Opslaan</button>
+          <span id="configuredBadge" style="display:none;font-size:12px;color:var(--muted);">🔒 Geconfigureerd</span>
+          <button class="btn-sm" id="saveCompanyBtn" onclick="saveCompany()">Opslaan</button>
         </div>
       </div>
       <div class="card-body">
@@ -729,9 +730,29 @@ function saveCompany() {
   setTimeout(() => badge.classList.remove('show'), 2000);
 }
 
-function loadCompany() {
-  const d = JSON.parse(localStorage.getItem('company') || 'null');
+async function loadCompany() {
+  let d = null;
+
+  try {
+    const res = await fetch('/api/config');
+    if (res.ok) {
+      const cfg = await res.json();
+      if (cfg.companyName) {
+        d = cfg;
+        // Lock fields — configured per deployment
+        ['companyName','vatNumber','iban','companyAddress'].forEach(id => {
+          const el = document.getElementById(id);
+          if (el) el.readOnly = true;
+        });
+        document.getElementById('saveCompanyBtn').style.display  = 'none';
+        document.getElementById('configuredBadge').style.display = 'inline';
+      }
+    }
+  } catch(_) {}
+
+  if (!d) d = JSON.parse(localStorage.getItem('company') || 'null');
   if (!d) return;
+
   document.getElementById('companyName').value    = d.companyName    || '';
   document.getElementById('vatNumber').value      = d.vatNumber      || '';
   document.getElementById('iban').value           = d.iban           || '';
@@ -739,8 +760,8 @@ function loadCompany() {
 }
 
 // ── Init ──────────────────────────────────────────────────────────────────────
-document.addEventListener('DOMContentLoaded', () => {
-  loadCompany();
+document.addEventListener('DOMContentLoaded', async () => {
+  await loadCompany();
   document.getElementById('invoiceNumber').value = peekInvoiceNumber();
   document.getElementById('invoiceDate').value   = todayBE();
 });

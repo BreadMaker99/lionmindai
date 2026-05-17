@@ -585,19 +585,38 @@ function show(id) {
 }
 
 // ── Init ──────────────────────────────────────────────────────────────────────
-document.addEventListener('DOMContentLoaded', () => {
-  loadCompanyIntoForm();
+document.addEventListener('DOMContentLoaded', async () => {
+  await loadCompanyIntoForm();
   setDefaultDates();
   renderDashboard();
 });
 
-function loadCompanyIntoForm() {
-  const d = JSON.parse(localStorage.getItem('company') || 'null');
+async function loadCompanyIntoForm() {
+  let d = null;
+
+  try {
+    const res = await fetch('/api/config');
+    if (res.ok) {
+      const cfg = await res.json();
+      if (cfg.companyName) {
+        d = cfg;
+        ['f_companyName','f_vatNumber','f_iban','f_companyAddress','f_companyEmail','f_companyPhone'].forEach(id => {
+          const el = document.getElementById(id);
+          if (el) el.readOnly = true;
+        });
+      }
+    }
+  } catch(_) {}
+
+  if (!d) d = JSON.parse(localStorage.getItem('company') || 'null');
   if (!d) return;
+
   document.getElementById('f_companyName').value    = d.companyName    || '';
   document.getElementById('f_vatNumber').value      = d.vatNumber      || '';
   document.getElementById('f_iban').value           = d.iban           || '';
   document.getElementById('f_companyAddress').value = d.companyAddress || '';
+  if (d.companyEmail) document.getElementById('f_companyEmail').value = d.companyEmail;
+  if (d.companyPhone) document.getElementById('f_companyPhone').value = d.companyPhone;
 }
 
 function setDefaultDates() {
