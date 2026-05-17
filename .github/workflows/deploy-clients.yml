@@ -20,12 +20,12 @@ jobs:
       - name: Haal alle factuur-projecten op en deploy
         env:
           VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
-          VERCEL_ORG_ID: team_IwFZItsdchNaMkx1KZWshT5Z
+          ORG_ID: team_IwFZItsdchNaMkx1KZWshT5Z
         run: |
           echo "Ophalen van alle factuur-projecten..."
 
           PROJECTS=$(curl -sf \
-            "https://api.vercel.com/v9/projects?teamId=${VERCEL_ORG_ID}&limit=100" \
+            "https://api.vercel.com/v9/projects?teamId=${ORG_ID}&limit=100" \
             -H "Authorization: Bearer ${VERCEL_TOKEN}" | \
             python3 -c "
           import json, sys
@@ -52,7 +52,7 @@ jobs:
 
             # Schrijf project link zonder heredoc (vermijdt insprong-problemen)
             printf '{"projectId":"%s","orgId":"%s","projectName":"%s"}' \
-              "${PROJECT_ID}" "${VERCEL_ORG_ID}" "${PROJECT_NAME}" \
+              "${PROJECT_ID}" "${ORG_ID}" "${PROJECT_NAME}" \
               > factuur-app/.vercel/project.json
 
             if vercel --prod --yes --cwd factuur-app --token "${VERCEL_TOKEN}" 2>&1; then
