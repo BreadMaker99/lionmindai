@@ -45,10 +45,14 @@ read -rp "  E-mail (optioneel, enter om over te slaan): " COMPANY_EMAIL
 read -rp "  Telefoon (optioneel, enter om over te slaan): " COMPANY_PHONE
 read -rp "  Eigen domein (bv. factuur.klant.be) of enter voor geen: " CUSTOM_DOMAIN
 
-# Gebruik de Anthropic key van het huidige project
-ANTHROPIC_KEY=$(vercel env pull --yes /dev/stdout 2>/dev/null | grep ANTHROPIC_API_KEY | cut -d= -f2 || echo "")
+# Gebruik de Anthropic key van het huidige project via tijdelijk .env bestand
+TMPENV=$(mktemp)
+vercel env pull --yes "$TMPENV" 2>/dev/null || true
+ANTHROPIC_KEY=$(grep '^ANTHROPIC_API_KEY=' "$TMPENV" 2>/dev/null | cut -d= -f2 | tr -d '"' || echo "")
+rm -f "$TMPENV"
+
 if [ -z "$ANTHROPIC_KEY" ]; then
-  read -rsp "  Anthropic API key: " ANTHROPIC_KEY
+  read -rsp "  Anthropic API key (niet zichtbaar): " ANTHROPIC_KEY
   echo ""
 fi
 
